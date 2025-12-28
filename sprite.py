@@ -46,6 +46,12 @@ class Player(pygame.sprite.Sprite):
     def attack(self):
         #generate blade
         Blade(owner=self)
+
+    def init_move(self):
+        """
+        Change the animation back to standing when stop pressing keys
+        """
+        self.image = self.stand
         
 
     def update(self):
