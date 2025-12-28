@@ -1,4 +1,5 @@
 import pygame
+import random
 
 class Player(pygame.sprite.Sprite):
     """
@@ -6,7 +7,7 @@ class Player(pygame.sprite.Sprite):
     player only moves when the background reach the edge
     """
 
-    def __init__(self, screen):
+    def __init__(self):
         pygame.sprite.Sprite.__init__(self)
 
         #images of different actions
@@ -42,8 +43,9 @@ class Player(pygame.sprite.Sprite):
         self.image = self.die
         
 
-    def att(self):
-        self.image = self.attack
+    def attack(self):
+        #generate blade
+        Blade(owner=self)
         
 
     def update(self):
@@ -88,13 +90,39 @@ class Enemy(pygame.sprite.Sprite):
     pass
 
 class Blade(pygame.sprite.Sprite):
-    pass
+    def __init__(self, owner, time=500, offset=(0,0), size=(40,40)):
+        super().__init__()
+        self.owner = owner    
+        self.offset = offset
+        self.blade_hitbox = pygame.Rect(
+            owner.rect.x + offset[0],
+            owner.rect.y + offset[1],
+            size[0],
+            size[1]
+        )
+        self.timer = 0
+        self.count_time = time
+        self.clock = pygame.time.Clock()
 
-class Bullet(pygame.sprite.Sprite):
-    pass
 
-class Weapons(pygame.sprite.Sprite):
-    pass
+    def update(self,dt):
+        #set timer
+        self.timer += dt
+        if self.timer >= self.count_time:
+            self.kill()
+
+        #move with player
+        self.blade_hitbox.topleft = (
+            self.owner.rect.x + self.offset[0],
+            self.owner.rect.y + self.offset[1]
+        )
+
+
+class Bullet(pygame.sprite.Sprite, Player):
+    super().__init__()
+
+class Weapons(pygame.sprite.Sprite, Blade, Bullet):
+    super().__init__()
 
 class Entities(pygame.sprite.Sprite):
     """
