@@ -106,6 +106,9 @@ class Blade(pygame.sprite.Sprite):
 
 
     def update(self,dt):
+        """
+        dt from mainloop, provide the timer as parameter to this sprite
+        """
         #set timer
         self.timer += dt
         if self.timer >= self.count_time:
