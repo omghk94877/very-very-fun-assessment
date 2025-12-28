@@ -49,6 +49,39 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         pass
 
+class Background(pygame.sprite.Sprite):
+    def __init__(self, image):
+        super().__init__()
+
+        #background, get from the parameter from main
+        self.image = image
+        self.rect = self.image.get_rect()
+
+        #speed
+        self.dx = 0
+        self.dy = 0
+
+    def player_move_left(self):
+        """
+        if player move left, background move right
+        """
+        self.dx = 5
+
+    def player_move_right(self):
+        """
+        if player move right, background move left
+        """  
+        self.dx = -5
+
+    def player_move_up(self):
+        pass
+
+    def stop(self):
+        self.dx = 0
+
+    def update(self):
+        self.rect.x += self.dx
+        self.rect.y += self.dy
 
 
 class Enemy(pygame.sprite.Sprite):
@@ -60,13 +93,13 @@ class Blade(pygame.sprite.Sprite):
 class Bullet(pygame.sprite.Sprite):
     pass
 
-class Background(pygame.sprite.Sprite):
-    pass
-
 class Weapons(pygame.sprite.Sprite):
     pass
 
-class Physics(pygame.sprite.Sprite):
+class Entities(pygame.sprite.Sprite):
+    """
+    Include level, health, etc
+    """
     pass
 
 class Obstacle(pygame.sprite.Sprite):
