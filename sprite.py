@@ -177,7 +177,8 @@ class Bullet(pygame.sprite.Sprite):
             self.vx = -self.vx
 
         self.timer = 0
-        self.count_time = 2000  # Bullet lasts for 2 seconds
+        # Bullet lasts for 2 seconds
+        self.count_time = 2000
 
     def update(self, dt):
         """Move the bullet using dt (milliseconds) and expire after count_time."""
