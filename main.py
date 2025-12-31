@@ -24,6 +24,10 @@ class Main:
         self.background = pygame.Surface(self.screen.get_size())
         self.background = self.background.convert()
         self.background.fill((0, 0, 255))
+        # create a player from sprite module so we can render it
+        self.player = sprite.Player()
+        # position player in center of screen
+        self.player.rect.center = self.screen.get_rect().center
 
     def loop(self):
         keepGoing = True
@@ -34,6 +38,29 @@ class Main:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     keepGoing = False
-                    # R - Refresh the display
-                    self.screen.blit(self.background, (0, 0))
-                    pygame.display.flip()
+                elif event.type == pygame.KEYDOWN:
+                    # WASD controls: A = left, D = right, W = up/jump, S = back to stand
+                    if event.key == pygame.K_a:
+                        self.player.move_left()
+                    elif event.key == pygame.K_d:
+                        self.player.move_right()
+                    elif event.key == pygame.K_w:
+                        self.player.move_up()
+                    elif event.key == pygame.K_s:
+                        self.player.init_move()
+                    elif event.key == pygame.K_ESCAPE:
+                        keepGoing = False
+                elif event.type == pygame.KEYUP:
+                    # when releasing movement keys, return to standing image
+                    if event.key in (pygame.K_a, pygame.K_d, pygame.K_w):
+                        self.player.init_move()
+            # R - Refresh the display
+            self.screen.blit(self.background, (0, 0))
+            # draw player
+            if hasattr(self, 'player') and self.player.image:
+                self.screen.blit(self.player.image, self.player.rect)
+            pygame.display.flip()
+
+
+if __name__ == "__main__":
+    Main()

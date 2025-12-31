@@ -11,12 +11,19 @@ class Player(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
 
         #images of different actions
-        self.stand = "image"
-        self.move_l = "image"
-        self.move_r = "image"
-        self.jump = "image"
-        self.attack = "image"
-        self.die = "image"
+        # Use simple Surfaces so code can run without external image files
+        self.stand = pygame.Surface((50, 80))
+        self.stand.fill((255, 0, 0))
+        self.move_l = pygame.Surface((50, 80))
+        self.move_l.fill((0, 255, 0))
+        self.move_r = pygame.Surface((50, 80))
+        self.move_r.fill((0, 0, 255))
+        self.jump = pygame.Surface((50, 80))
+        self.jump.fill((255, 255, 0))
+        self.attack_img = pygame.Surface((60, 40))
+        self.attack_img.fill((255, 128, 0))
+        self.die = pygame.Surface((50, 80))
+        self.die.fill((128, 128, 128))
 
 
         #starting image is stand
@@ -31,16 +38,24 @@ class Player(pygame.sprite.Sprite):
 
     def move_left(self):
         self.image = self.move_l
+        # keep same position when swapping image
+        self.rect = self.image.get_rect(center=self.rect.center)
 
     def move_right(self):
         self.image = self.move_r
+        # keep same position when swapping image
+        self.rect = self.image.get_rect(center=self.rect.center)
 
     def move_up(self):
         self.image = self.jump
+        # keep same position when swapping image
+        self.rect = self.image.get_rect(center=self.rect.center)
         
 
     def death(self):
         self.image = self.die
+        # keep same position when swapping image
+        self.rect = self.image.get_rect(center=self.rect.center)
         
 
     def attack(self):
@@ -52,6 +67,8 @@ class Player(pygame.sprite.Sprite):
         Change the animation back to standing when stop pressing keys
         """
         self.image = self.stand
+        # keep same position when swapping image
+        self.rect = self.image.get_rect(center=self.rect.center)
         
 
     def update(self):
@@ -127,11 +144,16 @@ class Blade(pygame.sprite.Sprite):
         )
 
 
-class Bullet(pygame.sprite.Sprite, Player):
-    super().__init__()
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
 
-class Weapons(pygame.sprite.Sprite, Blade, Bullet):
-    super().__init__()
+
+class Weapons(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        # placeholder for combined weapon behavior
+        pass
 
 class Entities(pygame.sprite.Sprite):
     """
