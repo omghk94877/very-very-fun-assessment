@@ -118,53 +118,75 @@ class Enemy(pygame.sprite.Sprite):
     pass
 
 class Blade(pygame.sprite.Sprite):
-    def __init__(self, owner, time=500, offset=(0,0), size=(40,40)):
+    def __init__(self, owner, time=300, offset=(0,0)):
+        """Create a short-lived blade that appears outside the player and then disappears.
+        The blade does not move after being spawned; it simply exists for `time` ms.
+        """
         super().__init__()
         self.owner = owner
         self.offset = offset
-        w, h = size
-        # make blade thin by default to look like a blade
-        self.image = pygame.Surface((w, max(6, h//4)))
+        # thin rectangle to look like a blade
+        self.image = pygame.Surface((180, 10))
         self.image.fill((255, 128, 0))
 
-        # spawn a bit outside the player depending on facing
+        # spawn just outside the player depending on facing
         facing = getattr(owner, 'facing', 'right')
         if facing == 'right':
-            start_x = owner.rect.right + 5 + offset[0]
-            vx = 0.6  # pixels per millisecond
+            x = owner.rect.right + 5 + offset[0]
         else:
-            start_x = owner.rect.left - self.image.get_width() - 5 + offset[0]
-            vx = -0.6
-        start_y = owner.rect.centery - (self.image.get_height() // 2) + offset[1]
+            x = owner.rect.left - self.image.get_width() - 5 + offset[0]
+        y = owner.rect.centery - (self.image.get_height() // 2) + offset[1]
 
-        self.rect = self.image.get_rect(topleft=(start_x, start_y))
-        # keep an accurate float position for smooth movement
-        self._pos_x = float(self.rect.x)
-        self.vx = vx
-
+        self.rect = self.image.get_rect(topleft=(x, y))
         self.blade_hitbox = self.rect.copy()
         self.timer = 0
         self.count_time = time
 
     def update(self, dt):
-        """
-        dt in milliseconds — move the blade outward over time and expire after count_time
-        """
+        """Advance lifetime; blade does not move after spawning."""
         self.timer += dt
         if self.timer >= self.count_time:
             self.kill()
-            return
-
-        # move according to velocity
-        self._pos_x += self.vx * dt
-        self.rect.x = int(self._pos_x)
-        #hitbox
-        self.blade_hitbox.topleft = self.rect.topleft
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, owner, speed=100):
+        """Create a bullet that moves in the direction the player is facing.
+        """
         super().__init__()
+        self.owner = owner
+        # simple rectangle to represent bullet
+        self.image = pygame.Surface((10, 5))
+        self.image.fill((0, 0, 0))
+
+        # spawn just outside the player depending on facing
+        facing = getattr(owner, 'facing', 'right')
+        if facing == 'right':
+            x = owner.rect.right + 5
+        else:
+            x = owner.rect.left - self.image.get_width() - 5
+        y = owner.rect.centery - (self.image.get_height() // 2)
+
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+        # convert requested speed 
+        self._pos_x = float(self.rect.x)
+        self.vx = (speed * 30) / 1000.0
+        if facing != 'right':
+            self.vx = -self.vx
+
+        self.timer = 0
+        self.count_time = 2000  # Bullet lasts for 2 seconds
+
+    def update(self, dt):
+        """Move the bullet using dt (milliseconds) and expire after count_time."""
+        # move with subpixel precision
+        self._pos_x += self.vx * dt
+        self.rect.x = int(self._pos_x)
+
+        self.timer += dt
+        if self.timer >= self.count_time:
+            self.kill()
 
 
 class Weapons(pygame.sprite.Sprite):
