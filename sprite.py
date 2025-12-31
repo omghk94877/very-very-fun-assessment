@@ -76,7 +76,8 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
         
 
-    def update(self):
+    def update(self, dt=0):
+        # accept optional dt so this sprite can be updated by a group with a dt arg
         pass
 
 class Background(pygame.sprite.Sprite):
