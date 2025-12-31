@@ -23,17 +23,19 @@ class Main:
         """Set background for game"""
         self.background = pygame.Surface(self.screen.get_size())
         self.background = self.background.convert()
-        self.background.fill((0, 0, 255))
+        self.background.fill((225, 225, 225))
         # create a player from sprite module so we can render it
         self.player = sprite.Player()
         # position player in center of screen
         self.player.rect.center = self.screen.get_rect().center
+        # group to hold active blades
+        self.blades = pygame.sprite.Group()
 
     def loop(self):
         keepGoing = True
         while keepGoing:
-            # T - Timer to set the frame rate
-            self.clock.tick(30)
+            # T - Timer to set the frame rate, dt in milliseconds
+            dt = self.clock.tick(30)
             # E - Event handling
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -50,15 +52,28 @@ class Main:
                         self.player.init_move()
                     elif event.key == pygame.K_ESCAPE:
                         keepGoing = False
+                    elif event.key == pygame.K_SPACE:
+                        # create a blade and add to blades group so it gets updated and drawn
+                        blade = sprite.Blade(self.player)
+                        self.blades.add(blade)
+                        
                 elif event.type == pygame.KEYUP:
                     # when releasing movement keys, return to standing image
                     if event.key in (pygame.K_a, pygame.K_d, pygame.K_w):
                         self.player.init_move()
+            # update blades
+            if hasattr(self, 'blades'):
+                self.blades.update(dt)
+
             # R - Refresh the display
             self.screen.blit(self.background, (0, 0))
             # draw player
             if hasattr(self, 'player') and self.player.image:
                 self.screen.blit(self.player.image, self.player.rect)
+            # draw blades
+            if hasattr(self, 'blades'):
+                self.blades.draw(self.screen)
+
             pygame.display.flip()
 
 

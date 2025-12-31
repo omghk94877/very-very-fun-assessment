@@ -29,6 +29,9 @@ class Player(pygame.sprite.Sprite):
         #starting image is stand
         self.image = self.stand
 
+        # facing: used by Blade to determine spawn direction
+        self.facing = 'right'
+
         #setting rect for collision
         self.rect = self.image.get_rect()
 
@@ -40,11 +43,13 @@ class Player(pygame.sprite.Sprite):
         self.image = self.move_l
         # keep same position when swapping image
         self.rect = self.image.get_rect(center=self.rect.center)
+        self.facing = 'left'
 
     def move_right(self):
         self.image = self.move_r
         # keep same position when swapping image
         self.rect = self.image.get_rect(center=self.rect.center)
+        self.facing = 'right'
 
     def move_up(self):
         self.image = self.jump
@@ -115,33 +120,46 @@ class Enemy(pygame.sprite.Sprite):
 class Blade(pygame.sprite.Sprite):
     def __init__(self, owner, time=500, offset=(0,0), size=(40,40)):
         super().__init__()
-        self.owner = owner    
+        self.owner = owner
         self.offset = offset
-        self.blade_hitbox = pygame.Rect(
-            owner.rect.x + offset[0],
-            owner.rect.y + offset[1],
-            size[0],
-            size[1]
-        )
+        w, h = size
+        # make blade thin by default to look like a blade
+        self.image = pygame.Surface((w, max(6, h//4)))
+        self.image.fill((255, 128, 0))
+
+        # spawn a bit outside the player depending on facing
+        facing = getattr(owner, 'facing', 'right')
+        if facing == 'right':
+            start_x = owner.rect.right + 5 + offset[0]
+            vx = 0.6  # pixels per millisecond
+        else:
+            start_x = owner.rect.left - self.image.get_width() - 5 + offset[0]
+            vx = -0.6
+        start_y = owner.rect.centery - (self.image.get_height() // 2) + offset[1]
+
+        self.rect = self.image.get_rect(topleft=(start_x, start_y))
+        # keep an accurate float position for smooth movement
+        self._pos_x = float(self.rect.x)
+        self.vx = vx
+
+        self.blade_hitbox = self.rect.copy()
         self.timer = 0
         self.count_time = time
-        self.clock = pygame.time.Clock()
 
-
-    def update(self,dt):
+    def update(self, dt):
         """
-        dt from mainloop, provide the timer as parameter to this sprite
+        dt in milliseconds — move the blade outward over time and expire after count_time
         """
-        #set timer
         self.timer += dt
         if self.timer >= self.count_time:
             self.kill()
+            return
 
-        #move with player
-        self.blade_hitbox.topleft = (
-            self.owner.rect.x + self.offset[0],
-            self.owner.rect.y + self.offset[1]
-        )
+        # move according to velocity
+        self._pos_x += self.vx * dt
+        self.rect.x = int(self._pos_x)
+        #hitbox
+        self.blade_hitbox.topleft = self.rect.topleft
 
 
 class Bullet(pygame.sprite.Sprite):
