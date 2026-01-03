@@ -27,6 +27,7 @@ class Main:
 
         # create a player from sprite module so we can render it
         self.player = sprite.Player()
+        self.story = sprite.Story()
 
         # position player in center of screen
         self.player.rect.center = self.screen.get_rect().center
@@ -34,6 +35,8 @@ class Main:
         # group to hold all active sprites (player, blades, bullets, etc.)
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.player)
+        self.all_sprites.add(self.story)
+        self.story.start()
 
     def loop(self):
         keepGoing = True
@@ -45,7 +48,11 @@ class Main:
                 if event.type == pygame.QUIT:
                     keepGoing = False
                 elif event.type == pygame.KEYDOWN:
-                    # WASD controls: A = left, D = right, W = up/jump, S = back to stand
+                    # WASD controls: 
+                    # A = left, 
+                    # D = right, 
+                    # W = up/jump, 
+                    # S has no effect currently
                     if event.key == pygame.K_a:
                         self.player.move_left()
                     elif event.key == pygame.K_d:
@@ -63,6 +70,8 @@ class Main:
                     elif event.key == pygame.K_q:
                         bullet = sprite.Bullet(self.player)
                         self.all_sprites.add(bullet)
+                    elif event.key == pygame.K_SPACE:
+                        self.story.next_line()
                     
                 elif event.type == pygame.KEYUP:
                     # when releasing movement keys, return to standing image
