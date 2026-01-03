@@ -53,6 +53,10 @@ class Main:
                     # D = right, 
                     # W = up/jump, 
                     # S has no effect currently
+                    # Escape to quit
+                    # E = blade attack
+                    # Q = shooting bullet
+                    # Space to read text
                     if event.key == pygame.K_a:
                         self.player.move_left()
                     elif event.key == pygame.K_d:

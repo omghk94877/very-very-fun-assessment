@@ -215,6 +215,7 @@ class Story(pygame.sprite.Sprite):
 
         self.index += 1
         
+        # only render if index is valid
         if self.index < len(self.sentences):
             self.surface.fill((0, 0, 0, 160))
             text = self.sentences[self.index]
@@ -222,18 +223,24 @@ class Story(pygame.sprite.Sprite):
             self.surface.blit(text_surf, (10, 10))
 
     def start(self):
+
+        #active the text box, start with the first text
         self.active = True
         self.index = 0
         self.index = 0
 
         self.font = pygame.font.SysFont(None, 28)
 
+
+        #text box
         self.surface = pygame.Surface((800, 120), pygame.SRCALPHA)
         self.surface.fill((0, 0, 0, 160))
         self.image = self.surface
         self.rect = self.surface.get_rect(topleft=(560, 900))
 
     def update(self, dt=0):
+        
+        # if the box is not actived, make the text box invisible
         if not self.active:
             self.surface.fill((0, 0, 0, 0))
 
