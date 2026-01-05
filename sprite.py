@@ -127,8 +127,12 @@ class Blade(pygame.sprite.Sprite):
         self.owner = owner
         self.offset = offset
         # thin rectangle to look like a blade
-        self.image = pygame.Surface((180, 10))
-        self.image.fill((255, 128, 0))
+        self.image = pygame.image.load("smt\Images\Flame_sword.gif")
+        self.image = pygame.transform.rotate(self.image, -90)
+        self.image = pygame.transform.scale(self.image, (140, 50))
+        #if not self.image:
+        #self.image = pygame.Surface((140, 10))
+        #self.image.fill((255, 128, 0))
 
         # spawn just outside the player depending on facing
         facing = getattr(owner, 'facing', 'right')
