@@ -60,6 +60,7 @@ class Main:
                     # E = blade attack
                     # Q = shooting bullet
                     # Space to read text
+                    # c = change weapon
                     if event.key == pygame.K_a:
                         self.player.move_left()
                     elif event.key == pygame.K_d:
