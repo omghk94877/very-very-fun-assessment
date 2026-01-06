@@ -37,6 +37,9 @@ class Main:
         self.all_sprites.add(self.player)
         self.all_sprites.add(self.story)
         self.story.start()
+        # currently equipped weapon: 'flame' or 'obsidian'
+        self.weapon = 'flame'
+        self.player.weapon = self.weapon
 
     def loop(self):
         keepGoing = True
@@ -67,15 +70,29 @@ class Main:
                         self.player.init_move()
                     elif event.key == pygame.K_ESCAPE:
                         keepGoing = False
+
                     elif event.key == pygame.K_e:
-                        # create a blade and add to the central all_sprites group
-                        blade = sprite.Blade(self.player)
+                        # use currently equipped blade
+                        if getattr(self, 'weapon', 'flame') == 'obsidian':
+                            blade = sprite.Other_blade(self.player)
+                        else:
+                            blade = sprite.Blade(self.player)
                         self.all_sprites.add(blade)
+
                     elif event.key == pygame.K_q:
                         bullet = sprite.Bullet(self.player)
                         self.all_sprites.add(bullet)
                     elif event.key == pygame.K_SPACE:
                         self.story.next_line()
+
+                    elif event.key == pygame.K_c:
+                        # toggle equipped weapon between flame and obsidian
+                        if getattr(self, 'weapon', 'flame') == 'flame':
+                            self.weapon = 'obsidian'
+                        else:
+                            self.weapon = 'flame'
+                        self.player.weapon = self.weapon
+                        
                     
                 elif event.type == pygame.KEYUP:
                     # when releasing movement keys, return to standing image

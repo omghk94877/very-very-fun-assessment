@@ -130,22 +130,49 @@ class Blade(pygame.sprite.Sprite):
         self.image = pygame.image.load("smt\Images\Flame_sword.gif")
         self.image = pygame.transform.rotate(self.image, -90)
         self.image = pygame.transform.scale(self.image, (140, 50))
-        #if not self.image:
-        #self.image = pygame.Surface((140, 10))
-        #self.image.fill((255, 128, 0))
-
-        # spawn just outside the player depending on facing
-        facing = getattr(owner, 'facing', 'right')
+        facing = getattr(self.owner, 'facing', 'right')
         if facing == 'right':
-            x = owner.rect.right + 5 + offset[0]
-        else:
-            x = owner.rect.left - self.image.get_width() - 5 + offset[0]
-        y = owner.rect.centery - (self.image.get_height() // 2) + offset[1]
+            x = self.owner.rect.right + 5 + self.offset[0]
 
+        elif facing == 'left':
+            self.image = pygame.transform.rotate(self.image, 180)
+            x = self.owner.rect.left - self.image.get_width() - 5 + self.offset[0]
+        y = self.owner.rect.centery - (self.image.get_height() // 2) + self.offset[1]
         self.rect = self.image.get_rect(topleft=(x, y))
-        self.blade_hitbox = self.rect.copy()
+
         self.timer = 0
-        self.count_time = time
+        self.count_time = 300
+
+
+    def update(self, dt):
+        """Advance lifetime; blade does not move after spawning."""
+        self.timer += dt
+        if self.timer >= self.count_time:
+            self.kill()
+
+class Other_blade(pygame.sprite.Sprite):
+    def __init__(self, owner, time=300, offset=(0,0)):
+        """Create a short-lived blade that appears outside the player and then disappears.
+        The blade does not move after being spawned; it simply exists for `time` ms.
+        """
+        super().__init__()
+        self.owner = owner
+        self.offset = offset
+        # thin rectangle to look like a blade
+        self.image = pygame.image.load("smt\Images\Obsidian_sword.png")
+        self.image = pygame.transform.rotate(self.image, -90)
+        self.image = pygame.transform.scale(self.image, (140, 50))
+        facing = getattr(self.owner, 'facing', 'right')
+        if facing == 'right':
+            x = self.owner.rect.right + 5 + self.offset[0]
+        elif facing == "left":
+            self.image = pygame.transform.rotate(self.image, 180)
+            x = self.owner.rect.left - self.image.get_width() - 5 + self.offset[0]
+        y = self.owner.rect.centery - (self.image.get_height() // 2) + self.offset[1]
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+        self.timer = 0
+        self.count_time = 300
 
     def update(self, dt):
         """Advance lifetime; blade does not move after spawning."""
@@ -184,6 +211,7 @@ class Bullet(pygame.sprite.Sprite):
         # Bullet lasts for 2 seconds
         self.count_time = 2000
 
+
     def update(self, dt):
         """Move the bullet using dt (milliseconds) and expire after count_time."""
         # move with subpixel precision
@@ -194,13 +222,7 @@ class Bullet(pygame.sprite.Sprite):
         if self.timer >= self.count_time:
             self.kill()
 
-
-class Weapons(pygame.sprite.Sprite):
-    def __init__(self):
-        super().__init__()
-        # placeholder for combined weapon behavior
-        pass
-
+       
 class Story(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
