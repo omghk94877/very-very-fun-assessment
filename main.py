@@ -27,7 +27,7 @@ class Main:
 
         # create a player from sprite module so we can render it
         self.player = sprite.Player()
-        self.story = sprite.Story()
+        self.intro = sprite.Intro()
 
         # position player in center of screen
         self.player.rect.center = self.screen.get_rect().center
@@ -35,8 +35,8 @@ class Main:
         # group to hold all active sprites (player, blades, bullets, etc.)
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.player)
-        self.all_sprites.add(self.story)
-        self.story.start()
+        self.all_sprites.add(self.intro)
+        self.intro.start()
         # currently equipped weapon: 'flame' or 'obsidian'
         self.weapon = 'flame'
         self.player.weapon = self.weapon
@@ -83,7 +83,7 @@ class Main:
                         bullet = sprite.Bullet(self.player)
                         self.all_sprites.add(bullet)
                     elif event.key == pygame.K_SPACE:
-                        self.story.next_line()
+                        self.intro.next_line()
 
                     elif event.key == pygame.K_c:
                         # toggle equipped weapon between flame and obsidian

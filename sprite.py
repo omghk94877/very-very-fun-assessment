@@ -223,7 +223,7 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
 
        
-class Story(pygame.sprite.Sprite):
+class Intro(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.active = False
