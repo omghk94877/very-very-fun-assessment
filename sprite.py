@@ -81,28 +81,39 @@ class Player(pygame.sprite.Sprite):
         pass
 
 class Background(pygame.sprite.Sprite):
-    def __init__(self, image):
+    def __init__(self, image, screen_width=1920):
         super().__init__()
 
         #background, get from the parameter from main
         self.image = image
         self.rect = self.image.get_rect()
-
+        
         #speed
         self.dx = 0
         self.dy = 0
+        
+        # Screen and boundary info
+        self.screen_width = screen_width
+        self.image_width = image.get_width()
+        # Left boundary is 0, right boundary is when image right edge meets screen right edge
+        self.min_x = -(self.image_width - self.screen_width)  # negative value
+        self.max_x = 0
+        
+        # Track if at boundary
+        self.at_left_edge = False
+        self.at_right_edge = False
 
     def player_move_left(self):
         """
         if player move left, background move right
         """
-        self.dx = 5
+        self.dx = 20
 
     def player_move_right(self):
         """
         if player move right, background move left
         """  
-        self.dx = -5
+        self.dx = -20
 
     def player_move_up(self):
         pass
@@ -111,12 +122,64 @@ class Background(pygame.sprite.Sprite):
         self.dx = 0
 
     def update(self):
+        # Apply movement
         self.rect.x += self.dx
+        
+        # Enforce boundaries
+        if self.rect.x > self.max_x:
+            self.rect.x = self.max_x
+            self.at_right_edge = True
+        else:
+            self.at_right_edge = False
+            
+        if self.rect.x < self.min_x:
+            self.rect.x = self.min_x
+            self.at_left_edge = True
+        else:
+            self.at_left_edge = False
+        
         self.rect.y += self.dy
 
 
 class Enemy(pygame.sprite.Sprite):
-    pass
+    def __init__(self, player, background, screen_width=1920):
+        super().__init__()
+        self.player = player
+        self.background = background
+        self.screen_width = screen_width
+        
+        # Load and setup enemy image
+        self.frames = [
+            pygame.image.load("smt\Images\Root_monster_frame0.gif").convert_alpha(),
+            pygame.image.load("smt\Images\Root_monster_frame1.gif").convert_alpha(),
+        ]
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.frame_duration = 500
+        self.image = self.frames[self.frame_index]
+        self.image = pygame.transform.scale(self.image, (80, 80))
+        
+        # Spawn at random horizontal position in world coordinates
+        self.world_x = random.randint(500, 2340)  # Random position within the extended background
+        self.world_y = self.player.rect.centery - 40
+        
+        # Set initial screen position
+        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
+    
+    def update(self, dt=0):
+        self.frame_timer += dt
+
+        if self.frame_timer >= self.frame_duration:
+            self.frame_timer = 0
+            self.frame_index += 1
+
+            if self.frame_index >= len(self.frames):
+                self.frame_index = 0
+
+            self.image = self.frames[self.frame_index]
+        # Update screen position based on background movement
+        self.rect.x = int(self.world_x + self.background.rect.x)
+        self.rect.y = self.world_y
 
 class Other_blade(pygame.sprite.Sprite):
     def __init__(self, owner, time=300, offset=(0,0)):
@@ -318,4 +381,30 @@ class Intro(pygame.sprite.Sprite):
 
 
 class Obstacle(pygame.sprite.Sprite):
-    pass
+    """Obstacle placed in world coordinates as part of the background.
+    Obstacles store a `world_x/world_y` and compute their onscreen `rect`
+    from the background's offset so they move with the background scrolling.
+    """
+    def __init__(self, background, size=(100, 100)):
+        super().__init__()
+        self.background = background
+
+        # Load and prepare image
+        self.image = pygame.image.load("smt/Images/rock.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, size)
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+
+        # Choose a random position inside the background (world coordinates)
+        max_x = max(0, self.background.image.get_width() - self.width)
+        max_y = max(0, self.background.image.get_height() - self.height)
+        self.world_x = random.randrange(0, max_x + 1)
+        self.world_y = random.randrange(0, max_y + 1)
+
+        # Initial on-screen rect uses background offset
+        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y + self.background.rect.y))
+
+    def update(self, dt=0):
+        # Keep onscreen rect in sync with background offset
+        self.rect.x = int(self.world_x + self.background.rect.x)
+        self.rect.y = int(self.world_y + self.background.rect.y)

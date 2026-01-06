@@ -21,9 +21,11 @@ class Main:
 
     def entities(self):
         """Set background for game"""
-        self.background = pygame.Surface(self.screen.get_size())
-        self.background = self.background.convert()
-        self.background.fill((225, 225, 225))
+        background_image = pygame.image.load("smt/Images/Battleground1.png")
+        background_image = pygame.transform.scale(background_image, (2840, 1080))
+        
+        # Create background sprite for scrolling effect
+        self.background = sprite.Background(background_image, screen_width=1920)
 
         # create a player from sprite module so we can render it
         self.player = sprite.Player()
@@ -36,6 +38,22 @@ class Main:
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.player)
         self.all_sprites.add(self.intro)
+
+        # obstacles live in world coordinates (move with background)
+        self.obstacles = pygame.sprite.Group()
+        for i in range(5):
+            obs = sprite.Obstacle(self.background)
+            self.obstacles.add(obs)
+            self.all_sprites.add(obs)
+        
+        # group to hold enemies
+        self.enemies = pygame.sprite.Group()
+        
+        # Spawn initial enemy (pass background reference)
+        enemy = sprite.Enemy(self.player, self.background)
+        self.enemies.add(enemy)
+        self.all_sprites.add(enemy)
+        
         self.intro.start()
         # currently equipped weapon: 'flame' or 'obsidian'
         self.weapon = 'flame'
@@ -63,8 +81,15 @@ class Main:
                     # c = change weapon
                     if event.key == pygame.K_a:
                         self.player.move_left()
+                        # Only scroll background if not at left edge, otherwise player moves
+                        if not self.background.at_left_edge:
+                            self.background.player_move_left()
+                        
                     elif event.key == pygame.K_d:
                         self.player.move_right()
+                        # Only scroll background if not at right edge, otherwise player moves
+                        if not self.background.at_right_edge:
+                            self.background.player_move_right()
                     elif event.key == pygame.K_w:
                         self.player.move_up()
                     elif event.key == pygame.K_s:
@@ -99,12 +124,29 @@ class Main:
                     # when releasing movement keys, return to standing image
                     if event.key in (pygame.K_a, pygame.K_d, pygame.K_w):
                         self.player.init_move()
+                        self.background.stop()
 
             # update all sprites once (player, blades, bullets)
             self.all_sprites.update(dt)
+            # update background scrolling
+            self.background.update()
+            
+            # Check collisions between bullets and enemies
+            for bullet in list(self.all_sprites.sprites()):
+                if isinstance(bullet, sprite.Bullet):
+                    hit_enemies = pygame.sprite.spritecollide(bullet, self.enemies, True)
+                    if hit_enemies:
+                        bullet.kill()
+            
+            # Check collisions between blades and enemies
+            for blade in list(self.all_sprites.sprites()):
+                if isinstance(blade, sprite.Blade) or isinstance(blade, sprite.Other_blade):
+                    hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, True)
+                    if hit_enemies:
+                        pass
 
             # R - Refresh the display
-            self.screen.blit(self.background, (0, 0))
+            self.screen.blit(self.background.image, self.background.rect)
 
             # draw all sprites (order is insertion order)
             self.all_sprites.draw(self.screen)
