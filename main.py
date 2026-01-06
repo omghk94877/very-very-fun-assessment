@@ -36,6 +36,7 @@ class Main:
 
         # group to hold all active sprites (player, blades, bullets, etc.)
         self.all_sprites = pygame.sprite.Group()
+        self.all_sprites.add(self.background)
         self.all_sprites.add(self.player)
         self.all_sprites.add(self.intro)
 
@@ -63,7 +64,7 @@ class Main:
         keepGoing = True
         while keepGoing:
             # T - Timer to set the frame rate, dt in milliseconds
-            dt = self.clock.tick(30)
+            dt = self.clock.tick(30)    
             # E - Event handling
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -129,7 +130,7 @@ class Main:
             # update all sprites once (player, blades, bullets)
             self.all_sprites.update(dt)
             # update background scrolling
-            self.background.update()
+            #self.background.update()
             
             # Check collisions between bullets and enemies
             for bullet in list(self.all_sprites.sprites()):
@@ -146,8 +147,7 @@ class Main:
                         pass
 
             # R - Refresh the display
-            self.screen.blit(self.background.image, self.background.rect)
-
+            #self.screen.blit(self.background.image, self.background.rect)
             # draw all sprites (order is insertion order)
             self.all_sprites.draw(self.screen)
 

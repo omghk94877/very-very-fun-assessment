@@ -121,7 +121,7 @@ class Background(pygame.sprite.Sprite):
     def stop(self):
         self.dx = 0
 
-    def update(self):
+    def update(self, dt=0):
         # Apply movement
         self.rect.x += self.dx
         
