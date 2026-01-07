@@ -33,6 +33,8 @@ class Main:
 
         # position player in center of screen
         self.player.rect.center = self.screen.get_rect().center
+        # set ground level so player lands at the same vertical position after a jump
+        self.player.ground_y = self.player.rect.bottom
 
         # group to hold all active sprites (player, blades, bullets, etc.)
         self.all_sprites = pygame.sprite.Group()
@@ -82,17 +84,19 @@ class Main:
                     # c = change weapon
                     if event.key == pygame.K_a:
                         self.player.move_left()
-                        # Only scroll background if not at left edge, otherwise player moves
-                        if not self.background.at_left_edge:
+                        # Only scroll background if not at left edge and player is on the ground
+                        if not self.background.at_left_edge and getattr(self.player, 'on_ground', True):
                             self.background.player_move_left()
                         
                     elif event.key == pygame.K_d:
                         self.player.move_right()
-                        # Only scroll background if not at right edge, otherwise player moves
-                        if not self.background.at_right_edge:
+                        # Only scroll background if not at right edge and player is on the ground
+                        if not self.background.at_right_edge and getattr(self.player, 'on_ground', True):
                             self.background.player_move_right()
                     elif event.key == pygame.K_w:
+                        # jump; stop background scrolling while airborne so horizontal axis remains
                         self.player.move_up()
+                        self.background.stop()
                     elif event.key == pygame.K_s:
                         self.player.init_move()
                     elif event.key == pygame.K_ESCAPE:
@@ -100,11 +104,14 @@ class Main:
 
                     elif event.key == pygame.K_e:
                         # use currently equipped blade
-                        if getattr(self, 'weapon', 'flame') == 'obsidian':
-                            blade = sprite.Other_blade(self.player)
-                        else:
-                            blade = sprite.Blade(self.player)
-                        self.all_sprites.add(blade)
+                        # don't spawn a new blade if an existing blade is still active
+                        blade_exists = any(isinstance(s, (sprite.Blade, sprite.Other_blade)) for s in self.all_sprites.sprites())
+                        if not blade_exists:
+                            if getattr(self, 'weapon', 'flame') == 'obsidian':
+                                blade = sprite.Other_blade(self.player)
+                            else:
+                                blade = sprite.Blade(self.player)
+                            self.all_sprites.add(blade)
 
                     elif event.key == pygame.K_q:
                         bullet = sprite.Bullet(self.player)
@@ -127,11 +134,35 @@ class Main:
                         self.player.init_move()
                         self.background.stop()
 
+            # continuous input handling (handles holding keys, including in-air horizontal control)
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_a]:
+                # always allow the player to attempt a left move (move_left handles on_ground behavior)
+                self.player.move_left()
+                # scroll background (background moves, player stays put)
+                if not self.background.at_left_edge:
+                    self.background.player_move_left()
+            elif keys[pygame.K_d]:
+                self.player.move_right()
+                if not self.background.at_right_edge:
+                    self.background.player_move_right()
+            else:
+                # no horizontal key held; stop background scroll when on ground
+                # stop background scrolling
+                self.background.stop()
+
             # update all sprites once (player, blades, bullets)
             self.all_sprites.update(dt)
             # update background scrolling
             #self.background.update()
+            self.check_collision()
             
+
+    def check_collision(self):
+            for i in self.obstacles:
+                if i.rect.colliderect(self.player.rect):
+                    self.player.kill()
+
             # Check collisions between bullets and enemies
             for bullet in list(self.all_sprites.sprites()):
                 if isinstance(bullet, sprite.Bullet):

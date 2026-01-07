@@ -38,23 +38,40 @@ class Player(pygame.sprite.Sprite):
         #displacement
         self.dx = 0
         self.dy = 0
+        # vertical physics
+        self.vy = 0.0  # vertical speed in pixels/ms
+        self.gravity = 0.0015  # pixels per ms^2
+        self.on_ground = True
+        # ground y coordinate (pixels) - should be set by caller after positioning player
+        self.ground_y = None
 
     def move_left(self):
         self.image = self.move_l
         # keep same position when swapping image
         self.rect = self.image.get_rect(center=self.rect.center)
         self.facing = 'left'
+        # no direct horizontal movement of the player; background scrolls instead
 
     def move_right(self):
         self.image = self.move_r
         # keep same position when swapping image
         self.rect = self.image.get_rect(center=self.rect.center)
         self.facing = 'right'
+        # no direct horizontal movement of the player; background scrolls instead
 
     def move_up(self):
+        # jump only when on ground
+        if not self.on_ground:
+            return
         self.image = self.jump
         # keep same position when swapping image
         self.rect = self.image.get_rect(center=self.rect.center)
+        # initiate jump: negative vy moves up
+        self.vy = -0.6
+        self.on_ground = False
+        # record background start position so we can restore it on landing
+        if hasattr(self, 'background') and self.background is not None:
+            self._bg_start_y = self.background.rect.y
         
 
     def death(self):
@@ -77,8 +94,32 @@ class Player(pygame.sprite.Sprite):
         
 
     def update(self, dt=0):
-        # accept optional dt so this sprite can be updated by a group with a dt arg
-        pass
+        # accept optional dt (milliseconds) so this sprite can be updated by a group with a dt arg
+        if dt and not self.on_ground:
+            # integrate gravity
+            self.vy += self.gravity * dt
+            # vertical displacement this frame
+            dy = int(self.vy * dt)
+
+            # move the background opposite to player vertical motion so the player appears to move
+            if hasattr(self, 'background') and self.background is not None:
+                self.background.rect.y -= dy
+
+                # landing detection: when background returns to its start y, consider landed
+                if hasattr(self, '_bg_start_y') and self.background.rect.y >= self._bg_start_y:
+                    self.background.rect.y = self._bg_start_y
+                    self.vy = 0.0
+                    self.on_ground = True
+                    # return to standing image when landed
+                    self.init_move()
+            else:
+                # fallback: move player rect if no background reference
+                self.rect.y += dy
+                if self.ground_y is not None and self.rect.bottom >= self.ground_y:
+                    self.rect.bottom = self.ground_y
+                    self.vy = 0.0
+                    self.on_ground = True
+                    self.init_move()
 
 class Background(pygame.sprite.Sprite):
     def __init__(self, image, screen_width=1920):
