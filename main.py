@@ -6,19 +6,19 @@ import sprite
 class Main:
     def __init__(self):
         pygame.init()
-        # D - Display configuration
+        #D - Display configuration
         self.screen = pygame.display.set_mode((1920, 1080))
         pygame.display.set_caption("Hello, world!")
-        # E - Entities
+        #E - Entities
         self.entities()
-        # A - Action (broken into ALTER steps)
-        # A - Assign values to key variables
+        #A - Action (broken into ALTER steps)
+        #A - Assign values to key variables
         self.clock = pygame.time.Clock()
-        # game state flag: when True, freeze most updates (allow death animation)
+        #game state flag: when True, freeze most updates (allow death animation)
         self.game_over = False
-        # L - Loop
+        #L - Loop
         self.loop()
-        # Close the game window , set the X
+        #Close the game window , set the X
         pygame.quit()
 
     def entities(self):
@@ -26,67 +26,67 @@ class Main:
         background_image = pygame.image.load("smt/Images/Battleground1.png")
         background_image = pygame.transform.scale(background_image, (2840, 1080))
         
-        # Create background sprite for scrolling effect
+        #Create background sprite for scrolling effect
         self.background = sprite.Background(background_image, screen_width=1920)
 
-        # create a player from sprite module so we can render it
+        #create a player from sprite module so we can render it
         self.player = sprite.Player()
         self.intro = sprite.Intro()
 
-        # position player in center of screen
+        #position player in center of screen
         self.player.rect.center = self.screen.get_rect().center
-        # set ground level so player lands at the same vertical position after a jump
+        #set ground level so player lands at the same vertical position after a jump
         self.player.ground_y = self.player.rect.bottom
 
-        # group to hold all active sprites (player, blades, bullets, etc.)
+        #group to hold all active sprites (player, blades, bullets, etc.)
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.background)
         self.all_sprites.add(self.player)
         self.all_sprites.add(self.intro)
 
-        # obstacles live in world coordinates (move with background)
+        #obstacles live in world coordinates (move with background)
         self.rocks = pygame.sprite.Group()
         for i in range(5):
             rock = sprite.Rock(self.background)
             self.rocks.add(rock)
             self.all_sprites.add(rock)
 
-        # group to hold enemies
+        #group to hold enemies
         self.enemies = pygame.sprite.Group()
         
-        # Spawn initial enemy (pass background reference)
+        #Spawn initial enemy (pass background reference)
         self.enemy = sprite.Enemy(self.player, self.background)
         self.enemies.add(self.enemy)
         self.all_sprites.add(self.enemy)
 
         self.intro.start()
-        # currently equipped weapon: 'flame' or 'obsidian'
+        #currently equipped weapon: 'flame' or 'obsidian'
         self.weapon = 'flame'
         self.player.weapon = self.weapon
 
     def loop(self):
         keepGoing = True
         while keepGoing:
-            # T - Timer to set the frame rate, dt in milliseconds
+            #T - Timer to set the frame rate, dt in milliseconds
             dt = self.clock.tick(30)    
-            # E - Event handling
+            #E - Event handling
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     keepGoing = False
                 elif event.type == pygame.KEYDOWN:
-                    # Escape always quits; other controls disabled after death
+                    #Escape always quits; other controls disabled after death
                     if event.key == pygame.K_ESCAPE:
                         keepGoing = False
                     elif not self.game_over:
-                        # WASD controls: A/D/W movement, S stop/init_move
+                        #WASD controls: A/D/W movement, S stop/init_move
                         if event.key == pygame.K_a:
                             self.player.move_left()
-                            # Only scroll background if not at left edge and player is on the ground
+                            #Only scroll background if not at left edge and player is on the ground
                             if not self.background.at_left_edge and getattr(self.player, 'on_ground', True):
                                 self.background.player_move_left()
                         elif event.key == pygame.K_d:
                             self.player.move_right()
-                            # Only scroll background if not at right edge and player is on the ground
+                            #Only scroll background if not at right edge and player is on the ground
                             if not self.background.at_right_edge and getattr(self.player, 'on_ground', True):
                                 self.background.player_move_right()
                         elif event.key == pygame.K_w:
@@ -95,7 +95,7 @@ class Main:
                         elif event.key == pygame.K_s:
                             self.player.init_move()
 
-                        # combat / UI keys
+                        #combat / UI keys
                         elif event.key == pygame.K_e:
                             blade_exists = any(isinstance(s, (sprite.Blade, sprite.Other_blade)) for s in self.all_sprites.sprites())
                             if not blade_exists:
@@ -110,24 +110,24 @@ class Main:
                         elif event.key == pygame.K_SPACE:
                             self.intro.next_line()
                         elif event.key == pygame.K_c:
-                            # toggle equipped weapon between flame and obsidian
+                            #toggle equipped weapon between flame and obsidian
                             if getattr(self, 'weapon', 'flame') == 'flame':
                                 self.weapon = 'obsidian'
                             else:
                                 self.weapon = 'flame'
                             self.player.weapon = self.weapon
                 elif event.type == pygame.KEYUP:
-                    # when releasing movement keys, return to standing image
+                    #when releasing movement keys, return to standing image
                     if event.key in (pygame.K_a, pygame.K_d, pygame.K_w):
                         self.player.init_move()
                         self.background.stop()
 
-            # continuous input handling (handles holding keys, including in-air horizontal control)
+            #continuous input handling (handles holding keys, including in-air horizontal control)
             keys = pygame.key.get_pressed()
             if not self.game_over and keys[pygame.K_a]:
-                # always allow the player to attempt a left move (move_left handles on_ground behavior)
+                #always allow the player to attempt a left move (move_left handles on_ground behavior)
                 self.player.move_left()
-                # scroll background (background moves, player stays put)
+                #scroll background (background moves, player stays put)
                 if not self.background.at_left_edge:
                     self.background.player_move_left()
             elif not self.game_over and keys[pygame.K_d]:
@@ -135,56 +135,56 @@ class Main:
                 if not self.background.at_right_edge:
                     self.background.player_move_right()
             else:
-                # no horizontal key held; stop background scroll when on ground
-                # stop background scrolling
+                #no horizontal key held; stop background scroll when on ground
+                #stop background scrolling
                 self.background.stop()
 
-            # update sprites depending on game state
+            #update sprites depending on game state
             if not self.game_over:
-                # normal gameplay: update everything and check collisions
+                #normal gameplay: update everything and check collisions
                 self.all_sprites.update(dt)
-                # update background scrolling
+                #update background scrolling
                 #self.background.update()
                 self.check_collision()
             else:
-                # freeze everything except allow the player's death animation to advance
-                # stop background so world does not move
+                #freeze everything except allow the player's death animation to advance
+                #stop background so world does not move
                 self.background.stop()
-                # advance only the player animation so death anim can play
+                #advance only the player animation so death anim can play
                 self.player.update(dt)
-                # keep background rect stable
+                #keep background rect stable
                 self.background.update(0)
-                # still draw below
-            # R - Refresh the display (draw current sprite states)
-            # draw all sprites (order is insertion order)
+                #still draw below
+            #R - Refresh the display (draw current sprite states)
+            #draw all sprites (order is insertion order)
             self.all_sprites.draw(self.screen)
 
             pygame.display.flip()
             
 
     def check_collision(self):
-            # collision handling only (drawing done by caller)
+            #collision handling only (drawing done by caller)
             for i in self.rocks:
                 if i.rect.colliderect(self.player.rect):
-                    # trigger death and freeze game
+                    #trigger death and freeze game
                     self.player.death()
                     self.game_over = True
 
-            # Check collisions between bullets and enemies
+            #Check collisions between bullets and enemies
             for bullet in list(self.all_sprites.sprites()):
                 if isinstance(bullet, sprite.Bullet):
                     hit_enemies = pygame.sprite.spritecollide(bullet, self.enemies, True)
                     if hit_enemies:
                         bullet.kill()
 
-            # Check collisions between blades and enemies
+            #Check collisions between blades and enemies
             for blade in list(self.all_sprites.sprites()):
                 if isinstance(blade, sprite.Blade) or isinstance(blade, sprite.Other_blade):
                     hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, True)
                     if hit_enemies:
                         pass
 
-            # check for enemy and player
+            #check for enemy and player
             if self.enemy.rect.colliderect(self.player.rect):
                 self.player.death()
                 self.game_over = True
