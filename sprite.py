@@ -12,22 +12,60 @@ class Player(pygame.sprite.Sprite):
 
         #images of different actions
         # Use simple Surfaces so code can run without external image files
-        self.stand = pygame.Surface((50, 80))
-        self.stand.fill((255, 0, 0))
-        self.move_l = pygame.Surface((50, 80))
-        self.move_l.fill((0, 255, 0))
-        self.move_r = pygame.Surface((50, 80))
-        self.move_r.fill((0, 0, 255))
-        self.jump = pygame.Surface((50, 80))
-        self.jump.fill((255, 255, 0))
-        self.attack_img = pygame.Surface((60, 40))
-        self.attack_img.fill((255, 128, 0))
-        self.die = pygame.Surface((50, 80))
-        self.die.fill((128, 128, 128))
+        # load animation frames (some are lists of frames)
+        self.stand = [pygame.image.load("smt/Images/player_animation/frame_03_delay-0.08s.gif")]
 
+        self.move_l = [
+            pygame.image.load("smt/Images/player_animation/frame_40_delay-0.08s.gif"),
+            pygame.image.load("smt/Images/player_animation/frame_41_delay-0.08s.gif"),
+        ]
 
-        #starting image is stand
-        self.image = self.stand
+        self.move_r = [
+            pygame.image.load("smt/Images/player_animation/frame_14_delay-0.08s.gif"),
+            pygame.image.load("smt/Images/player_animation/frame_15_delay-0.08s.gif"),
+        ]
+
+        # single-frame surfaces for jump/attack/die (wrap as lists for uniform handling)
+        jump_surf = pygame.image.load("smt/Images/player_animation/frame_jump_delay-0.08s.gif")
+        
+        attack_surf = pygame.Surface((60, 40))
+        attack_surf.fill((255, 128, 0))
+        die_surf = pygame.Surface((80, 100))
+        die_surf.fill((128, 128, 128))
+
+        self.jump = [jump_surf]
+        self.attack_img = [attack_surf]
+        self.die = [die_surf]
+
+        # scale all loaded frames to the player's size (100x130)
+        def _scale_list(frames, size=(200,250)):
+            return [pygame.transform.scale(f, size) for f in frames]
+
+        self.stand = _scale_list(self.stand)
+        self.move_l = _scale_list(self.move_l)
+        self.move_r = _scale_list(self.move_r)
+        self.jump = _scale_list(self.jump)
+        # attack uses a slightly different size
+        self.attack_img = _scale_list(self.attack_img, (60, 40))
+        self.die = _scale_list(self.die)
+
+        # animation mapping and runtime state
+        self.animations = {
+            'stand': self.stand,
+            'move_l': self.move_l,
+            'move_r': self.move_r,
+            'jump': self.jump,
+            'attack': self.attack_img,
+            'die': self.die,
+        }
+
+        self.current_anim = 'stand'
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.frame_duration = 120  # ms per frame
+
+        # starting image is the first frame of the standing animation
+        self.image = self.animations[self.current_anim][self.frame_index]
 
         # facing: used by Blade to determine spawn direction
         self.facing = 'right'
@@ -46,16 +84,14 @@ class Player(pygame.sprite.Sprite):
         self.ground_y = None
 
     def move_left(self):
-        self.image = self.move_l
-        # keep same position when swapping image
-        self.rect = self.image.get_rect(center=self.rect.center)
+        # switch to left-walk animation
+        self.set_animation('move_l')
         self.facing = 'left'
         # no direct horizontal movement of the player; background scrolls instead
 
     def move_right(self):
-        self.image = self.move_r
-        # keep same position when swapping image
-        self.rect = self.image.get_rect(center=self.rect.center)
+        # switch to right-walk animation
+        self.set_animation('move_r')
         self.facing = 'right'
         # no direct horizontal movement of the player; background scrolls instead
 
@@ -63,11 +99,10 @@ class Player(pygame.sprite.Sprite):
         # jump only when on ground
         if not self.on_ground:
             return
-        self.image = self.jump
-        # keep same position when swapping image
-        self.rect = self.image.get_rect(center=self.rect.center)
+        # switch to jump animation
+        self.set_animation('jump')
         # initiate jump: negative vy moves up
-        self.vy = -0.6
+        self.vy = -1
         self.on_ground = False
         # record background start position so we can restore it on landing
         if hasattr(self, 'background') and self.background is not None:
@@ -75,25 +110,52 @@ class Player(pygame.sprite.Sprite):
         
 
     def death(self):
-        self.image = self.die
-        # keep same position when swapping image
-        self.rect = self.image.get_rect(center=self.rect.center)
+        self.set_animation('die')
+        # don't kill the sprite here; animation/state can handle further logic
         
 
     def attack(self):
         #generate blade
+        self.set_animation('attack')
         Blade(owner=self)
 
     def init_move(self):
         """
         Change the animation back to standing when stop pressing keys
         """
-        self.image = self.stand
-        # keep same position when swapping image
-        self.rect = self.image.get_rect(center=self.rect.center)
+        self.set_animation('stand')
+
+    def set_animation(self, name):
+        """Switch to a named animation (list of frames). Resets frame index/timer and preserves sprite center."""
+        if name == self.current_anim:
+            return
+        if name not in self.animations:
+            return
+        center = self.rect.center
+        self.current_anim = name
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.image = self.animations[self.current_anim][self.frame_index]
+        # preserve on-screen center
+        self.rect = self.image.get_rect(center=center)
         
 
     def update(self, dt=0):
+        # advance animation frames
+        if dt:
+            self.frame_timer += dt
+            frames = self.animations.get(self.current_anim, [])
+            if frames:
+                if self.frame_timer >= self.frame_duration:
+                    # advance by however many frame durations have passed
+                    advance = self.frame_timer // self.frame_duration
+                    self.frame_timer = self.frame_timer % self.frame_duration
+                    self.frame_index = (self.frame_index + advance) % len(frames)
+                    # preserve center when swapping image
+                    center = self.rect.center
+                    self.image = frames[self.frame_index]
+                    self.rect = self.image.get_rect(center=center)
+
         # accept optional dt (milliseconds) so this sprite can be updated by a group with a dt arg
         if dt and not self.on_ground:
             # integrate gravity
@@ -156,9 +218,6 @@ class Background(pygame.sprite.Sprite):
         """  
         self.dx = -20
 
-    def player_move_up(self):
-        pass
-
     def stop(self):
         self.dx = 0
 
@@ -206,6 +265,10 @@ class Enemy(pygame.sprite.Sprite):
         
         # Set initial screen position
         self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
+        # movement parameters (pixels per ms)
+        self.speed = 0.06  # ~60 px / 1000 ms => 60 px/s
+        # when player is within this horizontal distance (in world coords), enemy will chase
+        self.chase_radius = 500
     
     def update(self, dt=0):
         self.frame_timer += dt
@@ -218,7 +281,21 @@ class Enemy(pygame.sprite.Sprite):
                 self.frame_index = 0
 
             self.image = self.frames[self.frame_index]
-        # Update screen position based on background movement
+        # Basic chasing behavior: move in world-space toward player when close
+        try:
+            # compute player's world x (player screen x minus background offset)
+            player_world_x = self.player.rect.x - self.background.rect.x
+            dx = player_world_x - self.world_x
+            # if within chase radius, move toward player
+            if abs(dx) <= self.chase_radius and abs(dx) > 2:
+                direction = 5 if dx > 0 else -5
+                # advance world_x using dt-scaled speed
+                self.world_x += direction * self.speed * dt
+        except Exception:
+            # if any reference missing, skip movement
+            pass
+
+        # Update screen position based on background movement and world coords
         self.rect.x = int(self.world_x + self.background.rect.x)
         self.rect.y = self.world_y
 
@@ -421,7 +498,7 @@ class Intro(pygame.sprite.Sprite):
             self.surface.fill((0, 0, 0, 0))  
 
 
-class Obstacle(pygame.sprite.Sprite):
+class Rock(pygame.sprite.Sprite):
     """Obstacle placed in world coordinates as part of the background.
     Obstacles store a `world_x/world_y` and compute their onscreen `rect`
     from the background's offset so they move with the background scrolling.

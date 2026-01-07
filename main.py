@@ -43,12 +43,12 @@ class Main:
         self.all_sprites.add(self.intro)
 
         # obstacles live in world coordinates (move with background)
-        self.obstacles = pygame.sprite.Group()
+        self.rocks = pygame.sprite.Group()
         for i in range(5):
-            obs = sprite.Obstacle(self.background)
-            self.obstacles.add(obs)
-            self.all_sprites.add(obs)
-        
+            rock = sprite.Rock(self.background)
+            self.rocks.add(rock)
+            self.all_sprites.add(rock)
+
         # group to hold enemies
         self.enemies = pygame.sprite.Group()
         
@@ -94,7 +94,6 @@ class Main:
                         if not self.background.at_right_edge and getattr(self.player, 'on_ground', True):
                             self.background.player_move_right()
                     elif event.key == pygame.K_w:
-                        # jump; stop background scrolling while airborne so horizontal axis remains
                         self.player.move_up()
                         self.background.stop()
                     elif event.key == pygame.K_s:
@@ -159,9 +158,10 @@ class Main:
             
 
     def check_collision(self):
-            for i in self.obstacles:
+            for i in self.rocks:
                 if i.rect.colliderect(self.player.rect):
-                    self.player.kill()
+                    self.player.death()
+                    #self.player.kill()
 
             # Check collisions between bullets and enemies
             for bullet in list(self.all_sprites.sprites()):
