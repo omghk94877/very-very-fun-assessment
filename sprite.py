@@ -266,7 +266,7 @@ class Enemy(pygame.sprite.Sprite):
         # Set initial screen position
         self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
         # movement parameters (pixels per ms)
-        self.speed = 0.06  # ~60 px / 1000 ms => 60 px/s
+        self.speed = 0.03  # ~60 px / 1000 ms => 60 px/s
         # when player is within this horizontal distance (in world coords), enemy will chase
         self.chase_radius = 500
     
