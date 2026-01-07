@@ -30,7 +30,7 @@ class Player(pygame.sprite.Sprite):
         
         attack_surf = pygame.Surface((60, 40))
         attack_surf.fill((255, 128, 0))
-        die_surf = pygame.Surface((80, 100))
+        die_surf = pygame.Surface((10,10))
         die_surf.fill((128, 128, 128))
 
         self.jump = [jump_surf]
