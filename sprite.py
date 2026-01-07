@@ -38,7 +38,7 @@ class Player(pygame.sprite.Sprite):
         self.die = [die_surf]
 
         # scale all loaded frames to the player's size (100x130)
-        def _scale_list(frames, size=(200,250)):
+        def _scale_list(frames, size=(80, 130)):
             return [pygame.transform.scale(f, size) for f in frames]
 
         self.stand = _scale_list(self.stand)
@@ -395,16 +395,55 @@ class Blade(pygame.sprite.Sprite):
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, owner, speed=100):
+    def __init__(self, owner, speed=100, offset=(0,0)):
         """Create a bullet that moves in the direction the player is facing.
         """
         super().__init__()
+        self.offset = offset
         self.owner = owner
+        self.frames = [
+            pygame.image.load("smt/Images/firebal_0.gif").convert_alpha(),
+            pygame.image.load("smt/Images/firebal_1.gif").convert_alpha(),
+            pygame.image.load("smt/Images/firebal_2.gif").convert_alpha(),
+        ]
         # simple rectangle to represent bullet
         self.image = pygame.Surface((10, 5))
         self.image.fill((0, 0, 0))
 
+        #transforming the images to correct size
+        self.frames = [
+            pygame.transform.scale(img, (50,50)) for img in self.frames
+        ]
+        #transforming the images to correct rotation
+        self.frames = [
+            pygame.transform.rotate(img, -180) for img in self.frames
+            ]
         # spawn just outside the player depending on facing
+
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.frame_duration = 100 
+
+        # adjust frames for facing direction before picking initial image
+        facing = getattr(self.owner, 'facing', 'right')
+        if facing == 'left':
+            # rotate by 180 to flip the -90 rotated frames to face left
+            self.frames = [pygame.transform.rotate(img, 180) for img in self.frames]
+
+        # pick current image after any rotation so sizes are correct
+        self.image = self.frames[self.frame_index]
+
+        if facing == 'right':
+            x = self.owner.rect.right + 5 + self.offset[0]
+        else:
+            x = self.owner.rect.left - self.image.get_width() - 5 + self.offset[0]
+
+        y = self.owner.rect.centery - (self.image.get_height() // 2) + self.offset[1]
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+        self.timer = 0
+        self.count_time = 300
+
         facing = getattr(owner, 'facing', 'right')
         if facing == 'right':
             x = owner.rect.right + 5
@@ -432,6 +471,16 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.x = int(self._pos_x)
 
         self.timer += dt
+
+        if self.frame_timer >= self.frame_duration:
+            self.frame_timer = 0
+            self.frame_index += 1
+
+            if self.frame_index >= len(self.frames):
+                self.frame_index = 0
+
+            self.image = self.frames[self.frame_index]
+
         if self.timer >= self.count_time:
             self.kill()
 
