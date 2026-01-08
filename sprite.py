@@ -38,8 +38,8 @@ class Player(pygame.sprite.Sprite):
         self.jump = [jump_surf]
         self.attack_img = [attack_surf]
 
-        # scale all loaded frames to the player's size (100x130)
-        def _scale_list(frames, size=(80, 130)):
+        # scale all loaded frames to the player's size (60x100)
+        def _scale_list(frames, size=(60, 100)):
             return [pygame.transform.scale(f, size) for f in frames]
 
         self.stand = _scale_list(self.stand)
@@ -258,7 +258,7 @@ class Enemy(pygame.sprite.Sprite):
         self.frame_timer = 0
         self.frame_duration = 500
         self.image = self.frames[self.frame_index]
-        self.image = pygame.transform.scale(self.image, (80, 80))
+        self.image = pygame.transform.scale(self.image, (30, 30))
         
         # Spawn at a random horizontal position in world coordinates, but avoid spawning
         # too close to the player's current world position so the player doesn't start
@@ -339,7 +339,7 @@ class Other_blade(pygame.sprite.Sprite):
         ]
         #transforming the images to correct size
         self.frames = [
-            pygame.transform.scale(img, (50, 140)) for img in self.frames
+            pygame.transform.scale(img, (40, 110)) for img in self.frames
         ]
         #transforming the images to correct rotation
         self.frames = [
@@ -398,7 +398,7 @@ class Blade(pygame.sprite.Sprite):
         # thin rectangle to look like a blade
         self.image = pygame.image.load("smt\Images\Obsidian_sword.png")
         self.image = pygame.transform.rotate(self.image, -90)
-        self.image = pygame.transform.scale(self.image, (140, 50))
+        self.image = pygame.transform.scale(self.image, (100, 35))
         facing = getattr(self.owner, 'facing', 'right')
         if facing == 'right':
             x = self.owner.rect.right + 5 + self.offset[0]
@@ -436,7 +436,7 @@ class Bullet(pygame.sprite.Sprite):
 
         #transforming the images to correct size
         self.frames = [
-            pygame.transform.scale(img, (50,50)) for img in self.frames
+            pygame.transform.scale(img, (35, 35)) for img in self.frames
         ]
         #transforming the images to correct rotation
         self.frames = [
@@ -541,14 +541,14 @@ class Intro(pygame.sprite.Sprite):
         self.index = 0
         self.index = 0
 
-        self.font = pygame.font.SysFont(None, 28)
+        self.font = pygame.font.SysFont(None, 20)
 
 
         #text box
-        self.surface = pygame.Surface((800, 120), pygame.SRCALPHA)
+        self.surface = pygame.Surface((600, 80), pygame.SRCALPHA)
         self.surface.fill((0, 0, 0, 160))
         self.image = self.surface
-        self.rect = self.surface.get_rect(topleft=(560, 800))
+        self.rect = self.surface.get_rect(topleft=(200, 480))
 
     def update(self, dt=0):
         
@@ -564,7 +564,7 @@ class Intro(pygame.sprite.Sprite):
         if self.active and self.index < len(self.sentences):
             text = self.sentences[self.index]
             text_surf = self.font.render(text, True, (255, 255, 255))
-            self.surface.blit(text_surf, (10, 50))
+            self.surface.blit(text_surf, (10, 30))
 
         elif not self.active or self.index >= len(self.sentences):
             # clear the text box
@@ -576,7 +576,7 @@ class Rock(pygame.sprite.Sprite):
     Obstacles store a `world_x/world_y` and compute their onscreen `rect`
     from the background's offset so they move with the background scrolling.
     """
-    def __init__(self, background, size=(100, 100)):
+    def __init__(self, background, size=(60, 60)):
         super().__init__()
         self.background = background
 
@@ -642,7 +642,7 @@ class Spike(pygame.sprite.Sprite):
     Obstacles store a `world_x/world_y` and compute their onscreen `rect`
     from the background's offset so they move with the background scrolling.
     """
-    def __init__(self, background, size=(100, 100)):
+    def __init__(self, background, size=(60, 60)):
         super().__init__()
         self.background = background
 

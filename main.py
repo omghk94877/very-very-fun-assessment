@@ -43,7 +43,7 @@ class Main:
             pass
 
         background_image = pygame.image.load("smt/Images/Battleground1.png")
-        background_image = pygame.transform.scale(background_image, (11360, 1080))
+        background_image = pygame.transform.scale(background_image, (10000, 600))
         
         #Create background sprite for scrolling effect
         self.background = sprite.Background(background_image, screen_width=1920)
