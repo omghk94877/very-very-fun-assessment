@@ -103,7 +103,7 @@ class Player(pygame.sprite.Sprite):
         # switch to jump animation
         self.set_animation('jump')
         # initiate jump: negative vy moves up
-        self.vy = -1
+        self.vy = -0.8
         self.on_ground = False
         # record background start position so we can restore it on landing
         if hasattr(self, 'background') and self.background is not None:
