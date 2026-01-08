@@ -250,15 +250,27 @@ class Enemy(pygame.sprite.Sprite):
         self.screen_width = screen_width
         
         # Load and setup enemy image
-        self.frames = [
+        self.frames_root = [
             pygame.image.load("smt\Images\Root_monster_frame0.gif").convert_alpha(),
             pygame.image.load("smt\Images\Root_monster_frame1.gif").convert_alpha(),
         ]
+        self.frames_bat = [
+            pygame.image.load("smt\Images\monster_bat1.gif").convert_alpha(),
+            pygame.image.load("smt\Images\monster_bat2.gif").convert_alpha(),
+        ]
+
+        # Randomly choose enemy type (0 = root, 1 = bat)
+        self.enemy_type = random.randint(0, 1)
+        self.frames = self.frames_root if self.enemy_type == 0 else self.frames_bat
+        self.size = (60, 60) if self.enemy_type == 0 else (30, 30)
+
+        #setting frame entities 
         self.frame_index = 0
         self.frame_timer = 0
         self.frame_duration = 500
-        self.image = self.frames[self.frame_index]
-        self.image = pygame.transform.scale(self.image, (30, 30))
+
+        #setting enemy image
+        self.image = pygame.transform.scale(self.frames[self.frame_index], self.size)
         
         # Spawn at a random horizontal position in world coordinates, but avoid spawning
         # too close to the player's current world position so the player doesn't start
@@ -304,17 +316,29 @@ class Enemy(pygame.sprite.Sprite):
             if self.frame_index >= len(self.frames):
                 self.frame_index = 0
 
-            self.image = self.frames[self.frame_index]
+            # Update image and keep collision box centered
+            self.image = pygame.transform.scale(self.frames[self.frame_index], self.size)
+            # Update rect to keep collision box properly centered
+            old_center = self.rect.center
+            self.rect = self.image.get_rect(center=old_center)
+            
         # Basic chasing behavior: move in world-space toward player when close
         try:
             # compute player's world x (player screen x minus background offset)
             player_world_x = self.player.rect.x - self.background.rect.x
+            player_world_y = self.player.rect.y - self.background.rect.y
             dx = player_world_x - self.world_x
+            dy = player_world_y - self.world_y
             # if within chase radius, move toward player
             if abs(dx) <= self.chase_radius and abs(dx) > 2:
                 direction = 5 if dx > 0 else -5
                 # advance world_x using dt-scaled speed
                 self.world_x += direction * self.speed * dt
+                # also consider vertical movement to chase player
+                if abs(dy) <= self.chase_radius and abs(dy) > 2:
+                    direction = 5 if dy > 0 else -5
+                    # advance world_y using dt-scaled speed
+                    self.world_y += direction * self.speed * dt
         except Exception:
             # if any reference missing, skip movement
             pass
@@ -590,43 +614,23 @@ class Rock(pygame.sprite.Sprite):
         max_x = max(0, self.background.image.get_width() - self.width)
         max_y = max(0, self.background.image.get_height() - self.height)
 
-        # compute player world position to avoid spawning too close
-        try:
-            player_world_x = self.background.rect.x and (self.background.rect.x * 0)  # noop to keep lint happy
-            player_world_x = self.background.rect.x
-            player_world_x = self.background.rect.x
-            player_world_x = None
-        except Exception:
-            player_world_x = None
-
-        # We'll base the safe check on player's screen x converted to world x
-        try:
-            pwx = self.background.rect.x
-            player_world_x = self.world_x  # fallback placeholder
-        except Exception:
-            player_world_x = None
-
-        # Choose spawn not too close to player's world position (if available)
-        safe_distance = 150
-        # pick random world_x/world_y with retries
+        # Avoid spawning in center band where player typically is (40% of map)
+        # Player spawns at screen center, so avoid center 40% of the background
+        center_safe_min = int(max_x * 0.3)
+        center_safe_max = int(max_x * 0.7)
+        
+        # Pick random position avoiding center
         self.world_x = random.randrange(0, max_x + 1) if max_x >= 0 else 0
         self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
-        try:
-            # compute player's true world pos if possible
-            player_world_x = self.background.rect.x and (self.background.rect.x * 0)
-            # Use caller to supply player if available (Main sets player before rocks)
-            # We can't reliably access player here, so do a conservative placement: avoid center band
-            center_min = max_x // 3
-            center_max = (max_x * 2) // 3
-            # if the random position falls in the center band (where player likely is), try to nudge it
-            if center_min <= self.world_x <= center_max:
-                for _ in range(30):
-                    cx = random.randrange(0, max_x + 1)
-                    if cx < center_min or cx > center_max:
-                        self.world_x = cx
-                        break
-        except Exception:
-            pass
+        
+        # If spawned in center band, move to edge
+        if center_safe_min <= self.world_x <= center_safe_max:
+            if random.choice([True, False]):
+                # Place on left edge
+                self.world_x = random.randrange(0, center_safe_min) if center_safe_min > 0 else 0
+            else:
+                # Place on right edge
+                self.world_x = random.randrange(center_safe_max, max_x + 1) if center_safe_max < max_x else max_x
 
         # Initial on-screen rect uses background offset
         self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y + self.background.rect.y))
@@ -656,43 +660,23 @@ class Spike(pygame.sprite.Sprite):
         max_x = max(0, self.background.image.get_width() - self.width)
         max_y = max(0, self.background.image.get_height() - self.height)
 
-        # compute player world position to avoid spawning too close
-        try:
-            player_world_x = self.background.rect.x and (self.background.rect.x * 0)  # noop to keep lint happy
-            player_world_x = self.background.rect.x
-            player_world_x = self.background.rect.x
-            player_world_x = None
-        except Exception:
-            player_world_x = None
-
-        # We'll base the safe check on player's screen x converted to world x
-        try:
-            pwx = self.background.rect.x
-            player_world_x = self.world_x  # fallback placeholder
-        except Exception:
-            player_world_x = None
-
-        # Choose spawn not too close to player's world position (if available)
-        safe_distance = 150
-        # pick random world_x/world_y with retries
+        # Avoid spawning in center band where player typically is (40% of map)
+        # Player spawns at screen center, so avoid center 40% of the background
+        center_safe_min = int(max_x * 0.3)
+        center_safe_max = int(max_x * 0.7)
+        
+        # Pick random position avoiding center
         self.world_x = random.randrange(0, max_x + 1) if max_x >= 0 else 0
         self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
-        try:
-            # compute player's true world pos if possible
-            player_world_x = self.background.rect.x and (self.background.rect.x * 0)
-            # Use caller to supply player if available (Main sets player before rocks)
-            # We can't reliably access player here, so do a conservative placement: avoid center band
-            center_min = max_x // 3
-            center_max = (max_x * 2) // 3
-            # if the random position falls in the center band (where player likely is), try to nudge it
-            if center_min <= self.world_x <= center_max:
-                for _ in range(30):
-                    cx = random.randrange(0, max_x + 1)
-                    if cx < center_min or cx > center_max:
-                        self.world_x = cx
-                        break
-        except Exception:
-            pass
+        
+        # If spawned in center band, move to edge
+        if center_safe_min <= self.world_x <= center_safe_max:
+            if random.choice([True, False]):
+                # Place on left edge
+                self.world_x = random.randrange(0, center_safe_min) if center_safe_min > 0 else 0
+            else:
+                # Place on right edge
+                self.world_x = random.randrange(center_safe_max, max_x + 1) if center_safe_max < max_x else max_x
 
         # Initial on-screen rect uses background offset
         self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y + self.background.rect.y))
