@@ -1,5 +1,6 @@
 
 
+import random
 import pygame
 import sprite
 
@@ -22,7 +23,24 @@ class Main:
         pygame.quit()
 
     def entities(self):
-        """Set background for game"""
+        # play a random background music file (if available)
+        bgm_files = [
+            "smt/Sounds/8bitsong.wav",
+            "smt/Sounds/music1.mp3",
+            "smt/Sounds/music2.mp3",
+            "smt/Sounds/music3.mp3"
+        ]
+        try:
+            # ensure mixer is initialized (pygame.init usually does this, but be safe)
+            if not pygame.mixer.get_init():
+                pygame.mixer.init()
+            self.bgm = random.choice(bgm_files)
+            pygame.mixer.music.load(self.bgm)
+            pygame.mixer.music.play(-1)
+        except Exception:
+            # audio failure shouldn't stop the game; continue silently
+            pass
+
         background_image = pygame.image.load("smt/Images/Battleground1.png")
         background_image = pygame.transform.scale(background_image, (11360, 1080))
         
@@ -46,18 +64,22 @@ class Main:
 
         #obstacles live in world coordinates (move with background)
         self.rocks = pygame.sprite.Group()
-        for i in range(5):
+        for i in range(8):
             rock = sprite.Rock(self.background)
             self.rocks.add(rock)
             self.all_sprites.add(rock)
+
 
         #group to hold enemies
         self.enemies = pygame.sprite.Group()
         
         #Spawn initial enemy (pass background reference)
-        self.enemy = sprite.Enemy(self.player, self.background)
-        self.enemies.add(self.enemy)
-        self.all_sprites.add(self.enemy)
+        for i in range(10):
+            enemy = sprite.Enemy(self.player, self.background)
+            self.enemies.add(enemy)
+            self.all_sprites.add(enemy)
+
+        self.all_sprites.add(self.enemies)
 
         self.intro.start()
         #currently equipped weapon: 'flame' or 'obsidian'
@@ -65,18 +87,18 @@ class Main:
         self.player.weapon = self.weapon
 
     def loop(self):
-        keepGoing = True
-        while keepGoing:
+        self.keepGoing = True
+        while self.keepGoing:
             #T - Timer to set the frame rate, dt in milliseconds
             dt = self.clock.tick(30)    
             #E - Event handling
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    keepGoing = False
+                    self.keepGoing = False
                 elif event.type == pygame.KEYDOWN:
                     #Escape always quits; other controls disabled after death
                     if event.key == pygame.K_ESCAPE:
-                        keepGoing = False
+                        self.keepGoing = False
                     elif not self.game_over:
                         #WASD controls: A/D/W movement, S stop/init_move
                         if event.key == pygame.K_a:
@@ -116,7 +138,7 @@ class Main:
                             else:
                                 self.weapon = 'flame'
                             self.player.weapon = self.weapon
-                elif event.type == pygame.KEYUP:
+                elif event.type == pygame.KEYUP and not self.game_over:
                     #when releasing movement keys, return to standing image
                     if event.key in (pygame.K_a, pygame.K_d, pygame.K_w):
                         self.player.init_move()
@@ -169,6 +191,7 @@ class Main:
                     #trigger death and freeze game
                     self.player.death()
                     self.game_over = True
+                    #self.keepGoing = False
 
             #Check collisions between bullets and enemies
             for bullet in list(self.all_sprites.sprites()):
@@ -185,9 +208,10 @@ class Main:
                         pass
 
             #check for enemy and player
-            if self.enemy.rect.colliderect(self.player.rect):
-                self.player.death()
-                self.game_over = True
+            for i in self.enemies:
+                if i.rect.colliderect(self.player.rect):
+                    self.player.death()
+                    self.game_over = True
 
 
 if __name__ == "__main__":

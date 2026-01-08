@@ -259,9 +259,32 @@ class Enemy(pygame.sprite.Sprite):
         self.image = self.frames[self.frame_index]
         self.image = pygame.transform.scale(self.image, (80, 80))
         
-        # Spawn at random horizontal position in world coordinates
-        self.world_x = random.randint(500, 2340)  # Random position within the extended background
-        self.world_y = self.player.rect.centery - 40
+        # Spawn at a random horizontal position in world coordinates, but avoid spawning
+        # too close to the player's current world position so the player doesn't start
+        # on top of an enemy.
+        enemy_w = self.image.get_width()
+        bg_w = max(1, self.background.image.get_width())
+        min_x = 0
+        max_x = max(0, bg_w - enemy_w)
+
+        # compute player's world x (screen x - background offset)
+        try:
+            player_world_x = self.player.rect.x - self.background.rect.x
+        except Exception:
+            player_world_x = None
+
+        safe_distance = 200  # pixels; don't spawn enemy closer than this to player
+        self.world_x = random.randint(min_x, max_x) if max_x >= min_x else 0
+        # try a few times to find a spawn location outside the safe radius
+        if player_world_x is not None:
+            for _ in range(50):
+                candidate = random.randint(min_x, max_x)
+                if abs(candidate - player_world_x) >= safe_distance:
+                    self.world_x = candidate
+                    break
+
+        # vertical position relative to player
+        self.world_y = self.player.rect.centery - (self.image.get_height() // 2)
         
         # Set initial screen position
         self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
@@ -565,8 +588,44 @@ class Rock(pygame.sprite.Sprite):
         # Choose a random position inside the background (world coordinates)
         max_x = max(0, self.background.image.get_width() - self.width)
         max_y = max(0, self.background.image.get_height() - self.height)
-        self.world_x = random.randrange(0, max_x + 1)
-        self.world_y = random.randrange(0, max_y + 1)
+
+        # compute player world position to avoid spawning too close
+        try:
+            player_world_x = self.background.rect.x and (self.background.rect.x * 0)  # noop to keep lint happy
+            player_world_x = self.background.rect.x
+            player_world_x = self.background.rect.x
+            player_world_x = None
+        except Exception:
+            player_world_x = None
+
+        # We'll base the safe check on player's screen x converted to world x
+        try:
+            pwx = self.background.rect.x
+            player_world_x = self.world_x  # fallback placeholder
+        except Exception:
+            player_world_x = None
+
+        # Choose spawn not too close to player's world position (if available)
+        safe_distance = 150
+        # pick random world_x/world_y with retries
+        self.world_x = random.randrange(0, max_x + 1) if max_x >= 0 else 0
+        self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
+        try:
+            # compute player's true world pos if possible
+            player_world_x = self.background.rect.x and (self.background.rect.x * 0)
+            # Use caller to supply player if available (Main sets player before rocks)
+            # We can't reliably access player here, so do a conservative placement: avoid center band
+            center_min = max_x // 3
+            center_max = (max_x * 2) // 3
+            # if the random position falls in the center band (where player likely is), try to nudge it
+            if center_min <= self.world_x <= center_max:
+                for _ in range(30):
+                    cx = random.randrange(0, max_x + 1)
+                    if cx < center_min or cx > center_max:
+                        self.world_x = cx
+                        break
+        except Exception:
+            pass
 
         # Initial on-screen rect uses background offset
         self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y + self.background.rect.y))
