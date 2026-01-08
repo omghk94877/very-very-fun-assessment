@@ -5,10 +5,11 @@ import pygame
 import sprite
 
 class Main:
-    def __init__(self):
+    def __init__(self, size= (1000,600)):
         pygame.init()
         #D - Display configuration
-        self.screen = pygame.display.set_mode((1920, 1080))
+        self.size = size
+        self.screen = pygame.display.set_mode(size)
         pygame.display.set_caption("Hello, world!")
         #E - Entities
         self.entities()
