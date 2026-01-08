@@ -148,7 +148,9 @@ class Main:
                     if event.key in (pygame.K_a, pygame.K_d, pygame.K_w):
                         self.player.init_move()
                         self.background.stop()
+            self.handle_input(dt)
 
+    def handle_input(self, dt):
             #continuous input handling (handles holding keys, including in-air horizontal control)
             keys = pygame.key.get_pressed()
             if not self.game_over and keys[pygame.K_a]:
