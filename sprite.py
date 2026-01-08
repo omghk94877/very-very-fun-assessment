@@ -174,7 +174,7 @@ class Player(pygame.sprite.Sprite):
                     self.vy = 0.0
                     self.on_ground = True
                     # return to standing image when landed
-                    self.init_move()
+                    #self.init_move()
             else:
                 # fallback: move player rect if no background reference
                 self.rect.y += dy
@@ -182,7 +182,7 @@ class Player(pygame.sprite.Sprite):
                     self.rect.bottom = self.ground_y
                     self.vy = 0.0
                     self.on_ground = True
-                    self.init_move()
+                    #self.init_move()
 
 class Background(pygame.sprite.Sprite):
     def __init__(self, image, screen_width=1920):
