@@ -63,10 +63,10 @@ class Main:
         self.all_sprites.add(self.intro)
 
         #obstacles live in world coordinates (move with background)
-        self.rocks = pygame.sprite.Group()
+        self.obstacles = pygame.sprite.Group()
         for i in range(8):
             rock = sprite.Rock(self.background)
-            self.rocks.add(rock)
+            self.obstacles.add(rock)
             self.all_sprites.add(rock)
 
 
@@ -78,6 +78,11 @@ class Main:
             enemy = sprite.Enemy(self.player, self.background)
             self.enemies.add(enemy)
             self.all_sprites.add(enemy)
+
+        for i in range(5):
+            spikes = sprite.Spike(self.background)
+            self.obstacles.add(spikes)
+            self.all_sprites.add(spikes)
 
         self.all_sprites.add(self.enemies)
 
@@ -186,7 +191,7 @@ class Main:
 
     def check_collision(self):
             #collision handling only (drawing done by caller)
-            for i in self.rocks:
+            for i in self.obstacles:
                 if i.rect.colliderect(self.player.rect):
                     #trigger death and freeze game
                     self.player.death()

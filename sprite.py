@@ -634,3 +634,69 @@ class Rock(pygame.sprite.Sprite):
         # Keep onscreen rect in sync with background offset
         self.rect.x = int(self.world_x + self.background.rect.x)
         self.rect.y = int(self.world_y + self.background.rect.y)
+
+
+class Spike(pygame.sprite.Sprite):
+    """Obstacle placed in world coordinates as part of the background.
+    Obstacles store a `world_x/world_y` and compute their onscreen `rect`
+    from the background's offset so they move with the background scrolling.
+    """
+    def __init__(self, background, size=(100, 100)):
+        super().__init__()
+        self.background = background
+
+        # Load and prepare image
+        self.image = pygame.image.load("smt/Images/spike.png")#.convert_alpha()
+        self.image = pygame.transform.scale(self.image, size)
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+
+        # Choose a random position inside the background (world coordinates)
+        max_x = max(0, self.background.image.get_width() - self.width)
+        max_y = max(0, self.background.image.get_height() - self.height)
+
+        # compute player world position to avoid spawning too close
+        try:
+            player_world_x = self.background.rect.x and (self.background.rect.x * 0)  # noop to keep lint happy
+            player_world_x = self.background.rect.x
+            player_world_x = self.background.rect.x
+            player_world_x = None
+        except Exception:
+            player_world_x = None
+
+        # We'll base the safe check on player's screen x converted to world x
+        try:
+            pwx = self.background.rect.x
+            player_world_x = self.world_x  # fallback placeholder
+        except Exception:
+            player_world_x = None
+
+        # Choose spawn not too close to player's world position (if available)
+        safe_distance = 150
+        # pick random world_x/world_y with retries
+        self.world_x = random.randrange(0, max_x + 1) if max_x >= 0 else 0
+        self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
+        try:
+            # compute player's true world pos if possible
+            player_world_x = self.background.rect.x and (self.background.rect.x * 0)
+            # Use caller to supply player if available (Main sets player before rocks)
+            # We can't reliably access player here, so do a conservative placement: avoid center band
+            center_min = max_x // 3
+            center_max = (max_x * 2) // 3
+            # if the random position falls in the center band (where player likely is), try to nudge it
+            if center_min <= self.world_x <= center_max:
+                for _ in range(30):
+                    cx = random.randrange(0, max_x + 1)
+                    if cx < center_min or cx > center_max:
+                        self.world_x = cx
+                        break
+        except Exception:
+            pass
+
+        # Initial on-screen rect uses background offset
+        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y + self.background.rect.y))
+
+    def update(self, dt=0):
+        # Keep onscreen rect in sync with background offset
+        self.rect.x = int(self.world_x + self.background.rect.x)
+        self.rect.y = int(self.world_y + self.background.rect.y)
