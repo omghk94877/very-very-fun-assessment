@@ -30,12 +30,13 @@ class Player(pygame.sprite.Sprite):
         
         attack_surf = pygame.Surface((60, 40))
         attack_surf.fill((255, 128, 0))
-        die_surf = pygame.Surface((10,10))
-        die_surf.fill((128, 128, 128))
+        self.die = [pygame.image.load("smt/Images/player_animation/death1.gif"),
+                    pygame.image.load("smt/Images/player_animation/death2.gif"),
+                    pygame.image.load("smt/Images/player_animation/death3.gif"),
+            ]
 
         self.jump = [jump_surf]
         self.attack_img = [attack_surf]
-        self.die = [die_surf]
 
         # scale all loaded frames to the player's size (100x130)
         def _scale_list(frames, size=(80, 130)):
@@ -547,7 +548,7 @@ class Intro(pygame.sprite.Sprite):
         self.surface = pygame.Surface((800, 120), pygame.SRCALPHA)
         self.surface.fill((0, 0, 0, 160))
         self.image = self.surface
-        self.rect = self.surface.get_rect(topleft=(560, 900))
+        self.rect = self.surface.get_rect(topleft=(560, 800))
 
     def update(self, dt=0):
         
