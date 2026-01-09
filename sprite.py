@@ -600,7 +600,7 @@ class Rock(pygame.sprite.Sprite):
     Obstacles store a `world_x/world_y` and compute their onscreen `rect`
     from the background's offset so they move with the background scrolling.
     """
-    def __init__(self, background, size=(60, 60)):
+    def __init__(self, background, size=(60, 60), player=None, safe_distance=200):
         super().__init__()
         self.background = background
 
@@ -614,22 +614,32 @@ class Rock(pygame.sprite.Sprite):
         max_x = max(0, self.background.image.get_width() - self.width)
         max_y = max(0, self.background.image.get_height() - self.height)
 
-        # Avoid spawning in center band where player typically is (40% of map)
-        # Player spawns at screen center, so avoid center 40% of the background
+        # Try to avoid spawning too close to the player if player provided
+        def _random_x_avoiding_player():
+            if player is None:
+                return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            try:
+                player_world_x = player.rect.x - self.background.rect.x
+            except Exception:
+                return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            # retry up to N times
+            for _ in range(50):
+                candidate = random.randrange(0, max_x + 1) if max_x >= 0 else 0
+                if abs(candidate - player_world_x) >= safe_distance:
+                    return candidate
+            # fallback to any position if retries failed
+            return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+
+        self.world_x = _random_x_avoiding_player()
+        self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
+
+        # If still in center band (old heuristic), move to edge (minor fallback)
         center_safe_min = int(max_x * 0.3)
         center_safe_max = int(max_x * 0.7)
-        
-        # Pick random position avoiding center
-        self.world_x = random.randrange(0, max_x + 1) if max_x >= 0 else 0
-        self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
-        
-        # If spawned in center band, move to edge
         if center_safe_min <= self.world_x <= center_safe_max:
             if random.choice([True, False]):
-                # Place on left edge
                 self.world_x = random.randrange(0, center_safe_min) if center_safe_min > 0 else 0
             else:
-                # Place on right edge
                 self.world_x = random.randrange(center_safe_max, max_x + 1) if center_safe_max < max_x else max_x
 
         # Initial on-screen rect uses background offset
@@ -646,7 +656,7 @@ class Spike(pygame.sprite.Sprite):
     Obstacles store a `world_x/world_y` and compute their onscreen `rect`
     from the background's offset so they move with the background scrolling.
     """
-    def __init__(self, background, size=(60, 60)):
+    def __init__(self, background, size=(60, 60), player=None, safe_distance=200):
         super().__init__()
         self.background = background
 
@@ -660,22 +670,29 @@ class Spike(pygame.sprite.Sprite):
         max_x = max(0, self.background.image.get_width() - self.width)
         max_y = max(0, self.background.image.get_height() - self.height)
 
-        # Avoid spawning in center band where player typically is (40% of map)
-        # Player spawns at screen center, so avoid center 40% of the background
+        def _random_x_avoiding_player():
+            if player is None:
+                return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            try:
+                player_world_x = player.rect.x - self.background.rect.x
+            except Exception:
+                return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            for _ in range(50):
+                candidate = random.randrange(0, max_x + 1) if max_x >= 0 else 0
+                if abs(candidate - player_world_x) >= safe_distance:
+                    return candidate
+            return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+
+        self.world_x = _random_x_avoiding_player()
+        self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
+
+        # If spawned in center band, move to edge (minor fallback)
         center_safe_min = int(max_x * 0.3)
         center_safe_max = int(max_x * 0.7)
-        
-        # Pick random position avoiding center
-        self.world_x = random.randrange(0, max_x + 1) if max_x >= 0 else 0
-        self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
-        
-        # If spawned in center band, move to edge
         if center_safe_min <= self.world_x <= center_safe_max:
             if random.choice([True, False]):
-                # Place on left edge
                 self.world_x = random.randrange(0, center_safe_min) if center_safe_min > 0 else 0
             else:
-                # Place on right edge
                 self.world_x = random.randrange(center_safe_max, max_x + 1) if center_safe_max < max_x else max_x
 
         # Initial on-screen rect uses background offset

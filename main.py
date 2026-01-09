@@ -1,5 +1,3 @@
-
-
 import random
 import pygame
 import sprite
@@ -66,7 +64,7 @@ class Main:
         #obstacles live in world coordinates (move with background)
         self.obstacles = pygame.sprite.Group()
         for i in range(8):
-            rock = sprite.Rock(self.background)
+            rock = sprite.Rock(self.background, player=self.player)
             self.obstacles.add(rock)
             self.all_sprites.add(rock)
 
@@ -81,7 +79,7 @@ class Main:
             self.all_sprites.add(enemy)
 
         for i in range(5):
-            spikes = sprite.Spike(self.background)
+            spikes = sprite.Spike(self.background, player=self.player)
             self.obstacles.add(spikes)
             self.all_sprites.add(spikes)
 
