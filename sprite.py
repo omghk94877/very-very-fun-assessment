@@ -542,6 +542,7 @@ class Intro(pygame.sprite.Sprite):
             "Use WASD to move around.",
             "Press E to attack with a blade.",
             "Press Q to shoot a bullet.",
+            "Press C to change weapons.",
             "Good luck on your adventure!"
         ]
         
