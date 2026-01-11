@@ -168,13 +168,14 @@ class Player(pygame.sprite.Sprite):
             if hasattr(self, 'background') and self.background is not None:
                 self.background.rect.y -= dy
 
-                # landing detection: when background returns to its start y, consider landed
-                if hasattr(self, '_bg_start_y') and self.background.rect.y >= self._bg_start_y:
+                # landing detection: only consider landed when we're descending (vy >= 0)
+                # and the background has returned to (or passed) its start y
+                if hasattr(self, '_bg_start_y') and self.vy >= 0 and self.background.rect.y <= self._bg_start_y:
                     self.background.rect.y = self._bg_start_y
                     self.vy = 0.0
                     self.on_ground = True
-                    # return to standing image when landed
-                    #self.init_move()
+                    # optionally reset to standing animation
+                    # self.init_move()
             else:
                 # fallback: move player rect if no background reference
                 self.rect.y += dy
@@ -182,7 +183,7 @@ class Player(pygame.sprite.Sprite):
                     self.rect.bottom = self.ground_y
                     self.vy = 0.0
                     self.on_ground = True
-                    #self.init_move()
+                    # self.init_move()
 
 class Background(pygame.sprite.Sprite):
     def __init__(self, image, screen_width=1920):
@@ -243,12 +244,12 @@ class Background(pygame.sprite.Sprite):
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, player, background, screen_width=1920):
+    def __init__(self, player, background, screen_width=1920, force_type=None, force_world_x=None, all_sprites=None):
         super().__init__()
         self.player = player
         self.background = background
         self.screen_width = screen_width
-        
+        self.all_sprites = all_sprites
         # Load and setup enemy image
         self.frames_root = [
             pygame.image.load("smt\Images\Root_monster_frame0.gif").convert_alpha(),
@@ -258,23 +259,48 @@ class Enemy(pygame.sprite.Sprite):
             pygame.image.load("smt\Images\monster_bat1.gif").convert_alpha(),
             pygame.image.load("smt\Images\monster_bat2.gif").convert_alpha(),
         ]
+        self.frames_boss = [
+            pygame.image.load("smt\Images\enemy_boss.gif"),
+            pygame.image.load("smt\Images\enemy_boss2.gif"),
+        ]
 
-        # Randomly choose enemy type (0 = root, 1 = bat)
-        self.enemy_type = random.randint(0, 1)
-        self.frames = self.frames_root if self.enemy_type == 0 else self.frames_bat
-        self.size = (60, 60) if self.enemy_type == 0 else (30, 30)
+        # Determine enemy type (allow forcing a type)
+        if force_type is not None:
+            self.enemy_type = force_type
+        else:
+            self.enemy_type = random.randint(0, 2)
 
-        #setting frame entities 
+        if self.enemy_type == 0:
+            self.frames = self.frames_root
+            self.size = (60, 60)
+        elif self.enemy_type == 1:
+            self.frames = self.frames_bat
+            self.size = (30,30)
+        else:
+            self.frames = self.frames_boss
+            # make boss noticeably larger so it's easy to spot
+            self.size = (180, 180)
+
+        # HP for enemies; boss has much more HP
+        if self.enemy_type == 2:
+            self.max_hp = 300
+            self.hp = self.max_hp
+            # boss firing params (ms, radius); ensure these exist before update() uses them
+            self.fire_radius = 400
+            self.fire_cooldown = 1500
+            self.fire_timer = 0
+        else:
+            self.max_hp = 30
+            self.hp = self.max_hp
+
+        # frame timing
         self.frame_index = 0
         self.frame_timer = 0
         self.frame_duration = 500
 
-        #setting enemy image
         self.image = pygame.transform.scale(self.frames[self.frame_index], self.size)
-        
-        # Spawn at a random horizontal position in world coordinates, but avoid spawning
-        # too close to the player's current world position so the player doesn't start
-        # on top of an enemy.
+
+        # World spawn range
         enemy_w = self.image.get_width()
         bg_w = max(1, self.background.image.get_width())
         min_x = 0
@@ -286,15 +312,29 @@ class Enemy(pygame.sprite.Sprite):
         except Exception:
             player_world_x = None
 
-        safe_distance = 200  # pixels; don't spawn enemy closer than this to player
-        self.world_x = random.randint(min_x, max_x) if max_x >= min_x else 0
-        # try a few times to find a spawn location outside the safe radius
-        if player_world_x is not None:
-            for _ in range(50):
-                candidate = random.randint(min_x, max_x)
-                if abs(candidate - player_world_x) >= safe_distance:
-                    self.world_x = candidate
-                    break
+        safe_distance = 200  # pixels; avoid spawning too close to player
+
+        # If force_world_x provided, use it (clamped). If this is a forced boss, place near end.
+        if force_world_x is not None:
+            self.world_x = max(min_x, min(max_x, int(force_world_x)))
+        elif self.enemy_type == 2:
+            # place boss near the end of the background but ensure it is visible on-screen
+            margin_from_end = 200
+            desired_world_x = max(min_x, max_x - margin_from_end)
+            # compute a candidate so the boss's on-screen x is near the right side of the view
+            visible_right = getattr(self.background, 'screen_width', 1000) - 150
+            candidate_world_x = visible_right - self.background.rect.x
+            # choose a position close to the end but not off-screen
+            self.world_x = int(max(min_x, min(desired_world_x, candidate_world_x)))
+        else:
+             # choose random spawn, avoiding player within safe_distance when possible
+             self.world_x = random.randint(min_x, max_x) if max_x >= min_x else 0
+             if player_world_x is not None:
+                 for _ in range(50):
+                     candidate = random.randint(min_x, max_x)
+                     if abs(candidate - player_world_x) >= safe_distance:
+                         self.world_x = candidate
+                         break
 
         # vertical position relative to player
         self.world_y = self.player.rect.centery - (self.image.get_height() // 2)
@@ -302,10 +342,15 @@ class Enemy(pygame.sprite.Sprite):
         # Set initial screen position
         self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
         # movement parameters (pixels per ms)
-        self.speed = 0.03  # ~60 px / 1000 ms => 60 px/s
-        # when player is within this horizontal distance (in world coords), enemy will chase
+        self.speed = 0.03
         self.chase_radius = 500
     
+    def take_damage(self, amount):
+        """Reduce HP, kill when HP <= 0."""
+        self.hp -= amount
+        if self.hp <= 0:
+            self.kill()
+
     def update(self, dt=0):
         self.frame_timer += dt
 
@@ -316,34 +361,63 @@ class Enemy(pygame.sprite.Sprite):
             if self.frame_index >= len(self.frames):
                 self.frame_index = 0
 
-            # Update image and keep collision box centered
             self.image = pygame.transform.scale(self.frames[self.frame_index], self.size)
-            # Update rect to keep collision box properly centered
             old_center = self.rect.center
             self.rect = self.image.get_rect(center=old_center)
             
-        # Basic chasing behavior: move in world-space toward player when close
         try:
-            # compute player's world x (player screen x minus background offset)
-            player_world_x = self.player.rect.x - self.background.rect.x
-            player_world_y = self.player.rect.y - self.background.rect.y
-            dx = player_world_x - self.world_x
-            dy = player_world_y - self.world_y
-            # if within chase radius, move toward player
-            if abs(dx) <= self.chase_radius and abs(dx) > 2:
-                direction = 5 if dx > 0 else -5
-                # advance world_x using dt-scaled speed
-                self.world_x += direction * self.speed * dt
-                # also consider vertical movement to chase player
-                if abs(dy) <= self.chase_radius and abs(dy) > 2:
-                    direction = 5 if dy > 0 else -5
-                    # advance world_y using dt-scaled speed
-                    self.world_y += direction * self.speed * dt
+            # Regular enemies can chase; boss (type 2) remains stationary (no world_x change)
+            if self.enemy_type != 2:
+                player_world_x = self.player.rect.x - self.background.rect.x
+                player_world_y = self.player.rect.y - self.background.rect.y
+                dx = player_world_x - self.world_x
+                dy = player_world_y - self.world_y
+                if abs(dx) <= self.chase_radius and abs(dx) > 2:
+                    direction = 5 if dx > 0 else -5
+                    self.world_x += direction * self.speed * dt
+                    if abs(dy) <= self.chase_radius and abs(dy) > 2:
+                        direction = 5 if dy > 0 else -5
+                        self.world_y += direction * self.speed * dt
         except Exception:
-            # if any reference missing, skip movement
             pass
 
-        # Update screen position based on background movement and world coords
+        # boss firing behavior (boss stationary but fires when player in range)
+        if self.enemy_type == 2:
+            # ensure attributes exist (defensive)
+            if not hasattr(self, 'fire_timer'):
+                self.fire_timer = 0
+            if not hasattr(self, 'fire_cooldown'):
+                self.fire_cooldown = 1500
+            if not hasattr(self, 'fire_radius'):
+                self.fire_radius = 400
+            # advance fire timer
+            self.fire_timer += dt
+            try:
+                player_world_x = self.player.rect.x - self.background.rect.x
+                dx = player_world_x - self.world_x
+                if abs(dx) <= self.fire_radius and self.fire_timer >= self.fire_cooldown:
+                    # spawn a boss projectile (larger/higher damage)
+                    if self.all_sprites is not None:
+                        proj = BossBullet(self)
+                        self.all_sprites.add(proj)
+                    self.fire_timer = 0
+            except Exception:
+                pass
+
+        # overlay boss health bar on image (only for boss)
+        if self.enemy_type == 2:
+            # draw health bar above the sprite using max_hp
+            base_img = self.image.copy()
+            bar_w = base_img.get_width()
+            bar_h = 8
+            hp_ratio = max(0.0, min(1.0, float(self.hp) / float(self.max_hp)))
+            # background bar
+            pygame.draw.rect(base_img, (60, 60, 60), (0, 0, bar_w, bar_h))
+            # hp portion
+            pygame.draw.rect(base_img, (200, 40, 40), (0, 0, int(bar_w * hp_ratio), bar_h))
+            self.image = base_img
+
+        # update onscreen rect from world coords (existing)
         self.rect.x = int(self.world_x + self.background.rect.x)
         self.rect.y = self.world_y
 
@@ -392,7 +466,8 @@ class Other_blade(pygame.sprite.Sprite):
 
         self.timer = 0
         self.count_time = 300
-
+        # damage for obsidian variant (strong)
+        self.damage = 80
 
     def update(self, dt):
         """Advance lifetime; blade does not move after spawning."""
@@ -434,6 +509,8 @@ class Blade(pygame.sprite.Sprite):
 
         self.timer = 0
         self.count_time = 300
+        # normal blade damage (higher than bullet)
+        self.damage = 40
 
     def update(self, dt):
         """Advance lifetime; blade does not move after spawning."""
@@ -510,10 +587,13 @@ class Bullet(pygame.sprite.Sprite):
         self.timer = 0
         # Bullet lasts for 2 seconds
         self.count_time = 2000
-
+        # bullet damage
+        self.damage = 15
 
     def update(self, dt):
         """Move the bullet using dt (milliseconds) and expire after count_time."""
+        # advance animation timer
+        self.frame_timer += dt
         # move with subpixel precision
         self._pos_x += self.vx * dt
         self.rect.x = int(self._pos_x)
@@ -532,7 +612,51 @@ class Bullet(pygame.sprite.Sprite):
         if self.timer >= self.count_time:
             self.kill()
 
-       
+
+# new boss projectile
+class BossBullet(pygame.sprite.Sprite):
+    def __init__(self, owner, speed=220):
+        super().__init__()
+        self.owner = owner
+        # create a larger projectile surface for boss
+        size = 44
+        radius = size // 2
+        self.image = pygame.Surface((size, size), pygame.SRCALPHA)
+        pygame.draw.circle(self.image, (255, 120, 0), (radius, radius), radius)
+        self.rect = self.image.get_rect()
+        # spawn just outside the boss facing the player
+        try:
+            player_world_x = self.owner.player.rect.x - self.owner.background.rect.x
+            dx = player_world_x - self.owner.world_x
+            facing_right = dx >= 0
+        except Exception:
+            facing_right = True
+
+        if facing_right:
+            x = self.owner.rect.right + 8
+            vx_sign = 1
+        else:
+            x = self.owner.rect.left - self.image.get_width() - 8
+            vx_sign = -1
+        y = self.owner.rect.centery - (self.image.get_height() // 2)
+        self.rect.topleft = (x, y)
+
+        self._pos_x = float(self.rect.x)
+        # speed px/sec -> px/ms
+        self.vx = (speed) / 1000.0 * vx_sign
+        self.timer = 0
+        self.count_time = 5000
+        # boss projectile does high damage
+        self.damage = 80
+
+    def update(self, dt):
+        self._pos_x += self.vx * dt
+        self.rect.x = int(self._pos_x)
+        self.timer += dt
+        if self.timer >= self.count_time:
+            self.kill()
+
+
 class Intro(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()

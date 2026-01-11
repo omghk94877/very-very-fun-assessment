@@ -75,18 +75,24 @@ class Main:
         #group to hold enemies
         self.enemies = pygame.sprite.Group()
         
-        #Spawn initial enemy (pass background reference)
-        for i in range(10):
-            enemy = sprite.Enemy(self.player, self.background)
+        # Spawn regular enemies (keep other enemies behavior unchanged)
+        for i in range(9):
+            enemy = sprite.Enemy(self.player, self.background, all_sprites=self.all_sprites)
             self.enemies.add(enemy)
             self.all_sprites.add(enemy)
+
+        # Spawn a single boss placed near the end of the map
+        boss = sprite.Enemy(self.player, self.background, force_type=2, all_sprites=self.all_sprites)
+        self.enemies.add(boss)
+        self.all_sprites.add(boss)
 
         for i in range(5):
             spikes = sprite.Spike(self.background, player=self.player)
             self.obstacles.add(spikes)
             self.all_sprites.add(spikes)
 
-        self.all_sprites.add(self.enemies)
+        # don't add the Group object itself into all_sprites (we already added each enemy)
+        # self.all_sprites.add(self.enemies)
 
         self.intro.start()
         #currently equipped weapon: 'flame' or 'obsidian'
@@ -214,19 +220,22 @@ class Main:
                     #self.keepGoing = False
                     
 
-            #Check collisions between bullets and enemies
+            #Check collisions between bullets and enemies (apply damage)
             for bullet in list(self.all_sprites.sprites()):
-                if isinstance(bullet, sprite.Bullet):
-                    hit_enemies = pygame.sprite.spritecollide(bullet, self.enemies, True)
+                if isinstance(bullet, sprite.Bullet) or isinstance(bullet, sprite.BossBullet):
+                    hit_enemies = pygame.sprite.spritecollide(bullet, self.enemies, False)
                     if hit_enemies:
+                        for e in hit_enemies:
+                            e.take_damage(getattr(bullet, 'damage', 0))
                         bullet.kill()
 
-            #Check collisions between blades and enemies
+            #Check collisions between blades and enemies (apply damage)
             for blade in list(self.all_sprites.sprites()):
                 if isinstance(blade, sprite.Blade) or isinstance(blade, sprite.Other_blade):
-                    hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, True)
+                    hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, False)
                     if hit_enemies:
-                        pass
+                        for e in hit_enemies:
+                            e.take_damage(getattr(blade, 'damage', 0))
 
             #check for enemy and player
             for i in self.enemies:
