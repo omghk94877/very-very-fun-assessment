@@ -16,6 +16,9 @@ class Main:
         self.clock = pygame.time.Clock()
         #game state flag: when True, freeze most updates (allow death animation)
         self.game_over = False
+        # respawn timer (ms). When game_over becomes True this is set and counts down.
+        self.respawn_timer = None
+        self.respawn_delay = 2000  # ms to wait before respawn
         #L - Loop
         self.loop()
         #Close the game window , set the X
@@ -182,6 +185,17 @@ class Main:
                 self.player.update(dt)
                 #keep background rect stable
                 self.background.update(0)
+                # start respawn timer if not already started
+                if self.respawn_timer is None:
+                    self.respawn_timer = self.respawn_delay
+                else:
+                    self.respawn_timer -= dt
+                    if self.respawn_timer <= 0:
+                        # respawn: recreate entities (will rebuild enemies/obstacles/player)
+                        # keep window/clock intact
+                        self.entities()
+                        self.game_over = False
+                        self.respawn_timer = None
                 #still draw below
             #R - Refresh the display (draw current sprite states)
             #draw all sprites (order is insertion order)
@@ -198,6 +212,7 @@ class Main:
                     self.player.death()
                     self.game_over = True
                     #self.keepGoing = False
+                    
 
             #Check collisions between bullets and enemies
             for bullet in list(self.all_sprites.sprites()):
