@@ -392,12 +392,12 @@ class Boss(pygame.sprite.Sprite):
             ]
         except Exception:
             # fallback: two colored surfaces
-            f1 = pygame.Surface((200, 200), pygame.SRCALPHA); f1.fill((150, 30, 30))
-            f2 = pygame.Surface((200, 200), pygame.SRCALPHA); f2.fill((180, 60, 60))
+            f1 = pygame.Surface((200, 600), pygame.SRCALPHA); f1.fill((150, 30, 30))
+            f2 = pygame.Surface((200, 600), pygame.SRCALPHA); f2.fill((180, 60, 60))
             self.frames = [f1, f2]
 
         # boss is larger
-        self.size = (220, 220)
+        self.size = (500, 220)
         self.frame_index = 0
         self.frame_timer = 0
         self.frame_duration = 400
@@ -406,14 +406,11 @@ class Boss(pygame.sprite.Sprite):
         # world spawn: near the end but visible on screen
         enemy_w = self.image.get_width()
         bg_w = max(1, self.background.image.get_width())
-        min_x = 0
         max_x = max(0, bg_w - enemy_w)
         # prefer near end but not off-screen: end_margin and visible clamp
         end_margin = 300
-        candidate = max(min_x, max_x - end_margin)
         # ensure visible on initial screen (background.rect.x likely 0)
-        visible_x_limit = max(0, self.background.screen_width - 300)
-        self.world_x = int(min(candidate, visible_x_limit))
+        self.world_x = 8000
         # fallback if negative
         if self.world_x < 0:
             self.world_x = max(0, max_x - end_margin)
@@ -489,7 +486,7 @@ class BigFireball(pygame.sprite.Sprite):
         self.image = pygame.Surface((size, size), pygame.SRCALPHA)
         pygame.draw.circle(self.image, (200, 40, 20), (size//2, size//2), size//2)
         self.rect = self.image.get_rect()
-        # spawn just outside boss facing player
+        # spawn just outside boss facing player (compute world coords)
         try:
             player_world_x = self.owner.player.rect.x - self.owner.background.rect.x
             dx = player_world_x - self.owner.world_x
@@ -497,22 +494,29 @@ class BigFireball(pygame.sprite.Sprite):
         except Exception:
             facing_right = True
         if facing_right:
-            x = self.owner.rect.right + 8
+            spawn_screen_x = self.owner.rect.right + 8
             vx_sign = 1
         else:
-            x = self.owner.rect.left - self.image.get_width() - 8
+            spawn_screen_x = self.owner.rect.left - self.image.get_width() - 8
             vx_sign = -1
-        y = self.owner.rect.centery - (self.image.get_height() // 2)
-        self.rect.topleft = (x, y)
-        self._pos_x = float(self.rect.x)
+        spawn_screen_y = self.owner.rect.centery - (self.image.get_height() // 2)
+        # convert to world coords
+        self.world_x = float(spawn_screen_x - self.owner.background.rect.x)
+        self.world_y = float(spawn_screen_y - self.owner.background.rect.y)
+        # initial rect in screen coords
+        self.rect.topleft = (int(self.world_x + self.owner.background.rect.x), int(self.world_y + self.owner.background.rect.y))
+
+        # world velocity (px per ms)
         self.vx = (speed) / 1000.0 * vx_sign
         self.timer = 0
-        self.count_time = 4000  # ms
+        self.count_time = 10000  # ms
         self.kind = 'big'
 
     def update(self, dt):
-        self._pos_x += self.vx * dt
-        self.rect.x = int(self._pos_x)
+        # advance in world space so background motion doesn't alter apparent speed
+        self.world_x += self.vx * dt
+        self.rect.x = int(self.world_x + self.owner.background.rect.x)
+        self.rect.y = int(self.world_y + self.owner.background.rect.y)
         self.timer += dt
         if self.timer >= self.count_time:
             self.kill()
@@ -534,22 +538,26 @@ class SmallFireball(pygame.sprite.Sprite):
         except Exception:
             facing_right = True
         if facing_right:
-            x = self.owner.rect.right + 6
+            spawn_screen_x = self.owner.rect.right + 6
             vx_sign = 1
         else:
-            x = self.owner.rect.left - size - 6
+            spawn_screen_x = self.owner.rect.left - size - 6
             vx_sign = -1
-        y = self.owner.rect.centery - (size // 2)
-        self.rect.topleft = (x, y)
-        self._pos_x = float(self.rect.x)
+        spawn_screen_y = self.owner.rect.centery - (size // 2)
+        # convert to world coords
+        self.world_x = float(spawn_screen_x - self.owner.background.rect.x)
+        self.world_y = float(spawn_screen_y - self.owner.background.rect.y)
+        self.rect.topleft = (int(self.world_x + self.owner.background.rect.x), int(self.world_y + self.owner.background.rect.y))
+
         self.vx = (speed) / 1000.0 * vx_sign
         self.timer = 0
-        self.count_time = 3000
+        self.count_time = 10000
         self.kind = 'small'
 
     def update(self, dt):
-        self._pos_x += self.vx * dt
-        self.rect.x = int(self._pos_x)
+        self.world_x += self.vx * dt
+        self.rect.x = int(self.world_x + self.owner.background.rect.x)
+        self.rect.y = int(self.world_y + self.owner.background.rect.y)
         self.timer += dt
         if self.timer >= self.count_time:
             self.kill()
@@ -564,7 +572,7 @@ class TracingFireball(pygame.sprite.Sprite):
         self.image = pygame.Surface((size, size), pygame.SRCALPHA)
         pygame.draw.circle(self.image, (240, 220, 60), (size//2, size//2), size//2)
         self.rect = self.image.get_rect()
-        # spawn toward player's side
+        # spawn toward player's side (screen coords -> world coords)
         try:
             player_world_x = self.owner.player.rect.x - self.owner.background.rect.x
             dx = player_world_x - self.owner.world_x
@@ -572,38 +580,41 @@ class TracingFireball(pygame.sprite.Sprite):
         except Exception:
             facing_right = True
         if facing_right:
-            x = self.owner.rect.right + 8
+            spawn_screen_x = self.owner.rect.right + 8
         else:
-            x = self.owner.rect.left - self.image.get_width() - 8
-        y = self.owner.rect.centery - (self.image.get_height() // 2)
-        self.rect.topleft = (x, y)
-        self._pos = pygame.Vector2(self.rect.x, self.rect.y)
-        # initial velocity toward player
+            spawn_screen_x = self.owner.rect.left - self.image.get_width() - 8
+        spawn_screen_y = self.owner.rect.centery - (self.image.get_height() // 2)
+        self.world_x = float(spawn_screen_x - self.owner.background.rect.x)
+        self.world_y = float(spawn_screen_y - self.owner.background.rect.y)
+        self._pos = pygame.Vector2(self.world_x, self.world_y)
+        # speed is px/ms in world space
         self.speed = speed / 1000.0
         self.timer = 0
         self.count_time = 3000
         self.kind = 'trace'
+        self.rect.topleft = (int(self._pos.x + self.owner.background.rect.x), int(self._pos.y + self.owner.background.rect.y))
 
     def update(self, dt):
-        # compute target player screen pos
         try:
-            player_screen_x = self.owner.player.rect.centerx
-            player_screen_y = self.owner.player.rect.centery
-            target = pygame.Vector2(player_screen_x, player_screen_y)
-            pos = pygame.Vector2(self._pos.x, self._pos.y)
-            dir_vec = (target - pos)
+            player_world_x = self.owner.player.rect.x - self.owner.background.rect.x
+            player_world_y = self.owner.player.rect.y - self.owner.background.rect.y
+            target = pygame.Vector2(player_world_x, player_world_y)
+            dir_vec = (target - self._pos)
             if dir_vec.length() > 0.1:
                 dir_vec = dir_vec.normalize()
-                # blend velocity toward player (smooth homing)
                 self._pos += dir_vec * (self.speed * dt)
             else:
-                self._pos += pygame.Vector2(self.speed * dt, 0)
-            self.rect.x = int(self._pos.x)
-            self.rect.y = int(self._pos.y)
+                self._pos.x += self.speed * dt
+            self.world_x = float(self._pos.x)
+            self.world_y = float(self._pos.y)
+            self.rect.x = int(self.world_x + self.owner.background.rect.x)
+            self.rect.y = int(self.world_y + self.owner.background.rect.y)
         except Exception:
-            # fallback: move right slowly
+            # fallback: move right slowly in world space
             self._pos.x += self.speed * dt
-            self.rect.x = int(self._pos.x)
+            self.world_x = float(self._pos.x)
+            self.rect.x = int(self.world_x + self.owner.background.rect.x)
+
         self.timer += dt
         if self.timer >= self.count_time:
             self.kill()
@@ -812,7 +823,7 @@ class BossBullet(pygame.sprite.Sprite):
         self.image = pygame.Surface((size, size), pygame.SRCALPHA)
         pygame.draw.circle(self.image, (255, 120, 0), (radius, radius), radius)
         self.rect = self.image.get_rect()
-        # spawn just outside the boss facing the player
+        # spawn just outside the boss facing the player (compute world coords)
         try:
             player_world_x = self.owner.player.rect.x - self.owner.background.rect.x
             dx = player_world_x - self.owner.world_x
@@ -821,16 +832,18 @@ class BossBullet(pygame.sprite.Sprite):
             facing_right = True
 
         if facing_right:
-            x = self.owner.rect.right + 8
+            spawn_screen_x = self.owner.rect.right + 8
             vx_sign = 1
         else:
-            x = self.owner.rect.left - self.image.get_width() - 8
+            spawn_screen_x = self.owner.rect.left - self.image.get_width() - 8
             vx_sign = -1
-        y = self.owner.rect.centery - (self.image.get_height() // 2)
-        self.rect.topleft = (x, y)
+        spawn_screen_y = self.owner.rect.centery - (self.image.get_height() // 2)
 
-        self._pos_x = float(self.rect.x)
-        # speed px/sec -> px/ms
+        self.world_x = float(spawn_screen_x - self.owner.background.rect.x)
+        self.world_y = float(spawn_screen_y - self.owner.background.rect.y)
+        self.rect.topleft = (int(self.world_x + self.owner.background.rect.x), int(self.world_y + self.owner.background.rect.y))
+
+        # speed px/sec -> px/ms (world-space)
         self.vx = (speed) / 1000.0 * vx_sign
         self.timer = 0
         self.count_time = 5000
@@ -838,8 +851,9 @@ class BossBullet(pygame.sprite.Sprite):
         self.damage = 80
 
     def update(self, dt):
-        self._pos_x += self.vx * dt
-        self.rect.x = int(self._pos_x)
+        self.world_x += self.vx * dt
+        self.rect.x = int(self.world_x + self.owner.background.rect.x)
+        self.rect.y = int(self.world_y + self.owner.background.rect.y)
         self.timer += dt
         if self.timer >= self.count_time:
             self.kill()

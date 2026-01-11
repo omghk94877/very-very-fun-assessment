@@ -251,6 +251,14 @@ class Main:
                         self.game_over = True
                         return
 
+            """# blade cancels boss projectiles (blade destroys any boss fireball it touches)
+            for blade in list(self.all_sprites.sprites()):
+                if isinstance(blade, (sprite.Blade, sprite.Other_blade)):
+                    for proj in list(self.all_sprites.sprites()):
+                        if isinstance(proj, (sprite.BigFireball, sprite.SmallFireball, sprite.TracingFireball, sprite.BossBullet)):
+                            if blade.rect.colliderect(proj.rect):
+                                proj.kill()"""
+                                
             #check for enemy and player
             for i in self.enemies:
                 if i.rect.colliderect(self.player.rect):
