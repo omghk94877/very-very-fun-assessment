@@ -77,14 +77,14 @@ class Main:
         
         # Spawn regular enemies (keep other enemies behavior unchanged)
         for i in range(9):
-            enemy = sprite.Enemy(self.player, self.background, all_sprites=self.all_sprites)
+            enemy = sprite.Enemy(self.player, self.background)
             self.enemies.add(enemy)
             self.all_sprites.add(enemy)
-
-        # Spawn a single boss placed near the end of the map
-        boss = sprite.Enemy(self.player, self.background, force_type=2, all_sprites=self.all_sprites)
-        self.enemies.add(boss)
-        self.all_sprites.add(boss)
+        
+        # create boss and add to active sprites (boss is not added to `self.enemies`
+        # so regular bullets/blades won't auto-delete it; we handle boss hits separately)
+        self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=50)
+        self.all_sprites.add(self.boss)
 
         for i in range(5):
             spikes = sprite.Spike(self.background, player=self.player)
@@ -218,24 +218,38 @@ class Main:
                     self.player.death()
                     self.game_over = True
                     #self.keepGoing = False
-                    
-
-            #Check collisions between bullets and enemies (apply damage)
-            for bullet in list(self.all_sprites.sprites()):
-                if isinstance(bullet, sprite.Bullet) or isinstance(bullet, sprite.BossBullet):
-                    hit_enemies = pygame.sprite.spritecollide(bullet, self.enemies, False)
+            
+            #Check collisions between bullets and enemies: bullets kill enemies on contact
+            for spr in list(self.all_sprites.sprites()):
+                if isinstance(spr, (sprite.Bullet, sprite.BossBullet)):
+                    hit_enemies = pygame.sprite.spritecollide(spr, self.enemies, True)
                     if hit_enemies:
-                        for e in hit_enemies:
-                            e.take_damage(getattr(bullet, 'damage', 0))
-                        bullet.kill()
-
-            #Check collisions between blades and enemies (apply damage)
+                        spr.kill()
+                    # bullet hitting boss: boss takes one hit (50 required to die)
+                    if getattr(self, 'boss', None) is not None and spr.rect.colliderect(self.boss.rect):
+                        # count a hit and remove bullet
+                        self.boss.take_hit()
+                        spr.kill()
+ 
+            #Check collisions between blades and enemies: blades kill enemies on contact
             for blade in list(self.all_sprites.sprites()):
-                if isinstance(blade, sprite.Blade) or isinstance(blade, sprite.Other_blade):
-                    hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, False)
+                if isinstance(blade, (sprite.Blade, sprite.Other_blade)):
+                    hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, True)
                     if hit_enemies:
-                        for e in hit_enemies:
-                            e.take_damage(getattr(blade, 'damage', 0))
+                        # optionally keep blade alive until its timer; do not need to call blade.kill() here
+                        pass
+                    # blade hitting boss
+                    if getattr(self, 'boss', None) is not None and blade.rect.colliderect(self.boss.rect):
+                        self.boss.take_hit()
+ 
+            # projectiles from boss kill player on contact
+            for spr in list(self.all_sprites.sprites()):
+                if isinstance(spr, (sprite.BigFireball, sprite.SmallFireball, sprite.TracingFireball, sprite.BossBullet)):
+                    if spr.rect.colliderect(self.player.rect):
+                        # player dies immediately on projectile hit
+                        self.player.death()
+                        self.game_over = True
+                        return
 
             #check for enemy and player
             for i in self.enemies:
