@@ -102,10 +102,11 @@ class Player(pygame.sprite.Sprite):
 
     def move_up(self):
         # jump only when on ground
-        self.jump_sound.play()
         if not self.on_ground:
             return
         # switch to jump animation
+        self.jump_sound.play()
+
         self.set_animation('jump')
         # initiate jump: negative vy moves up
         self.vy = -0.8
@@ -308,6 +309,19 @@ class Enemy(pygame.sprite.Sprite):
         else:
             # fallback if spawn range is invalid
             self.world_x = player_world_x + safe_distance
+
+        # Ensure final on-screen x is to the right of the player's right edge by safe_distance
+        try:
+            player_screen_right = self.player.rect.right
+            min_screen_x = player_screen_right + safe_distance
+            min_world_x = min_screen_x - self.background.rect.x
+            if self.world_x + self.background.rect.x < min_screen_x:
+                # clamp into view to the right of player
+                self.world_x = max(min_world_x, 0)
+            if self.world_x > max_x:
+                self.world_x = max_x
+        except Exception:
+            pass
 
         # vertical position relative to player
         self.world_y = self.player.rect.centery - (self.image.get_height() // 2)
@@ -930,10 +944,6 @@ class Intro(pygame.sprite.Sprite):
 
 
 class Rock(pygame.sprite.Sprite):
-    """Obstacle placed in world coordinates as part of the background.
-    Obstacles store a `world_x/world_y` and compute their onscreen `rect`
-    from the background's offset so they move with the background scrolling.
-    """
     def __init__(self, background, size=(60, 60), player=None, safe_distance=200):
         super().__init__()
         self.background = background
@@ -981,7 +991,19 @@ class Rock(pygame.sprite.Sprite):
                 self.world_x = random.randrange(center_safe_max, max_x + 1) if center_safe_max < max_x else max_x
 
         # Initial on-screen rect uses background offset
-        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y + self.background.rect.y))
+        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
+
+        # Extra safety: if sprite ended up left of player on-screen, push it right of player
+        try:
+            if player is not None:
+                player_screen_right = player.rect.right
+                min_screen_x = player_screen_right + safe_distance
+                if self.rect.x < min_screen_x:
+                    # move world_x so on-screen x is just right of player
+                    self.world_x = max(min_screen_x - self.background.rect.x, 0)
+                    self.rect.x = int(self.world_x + self.background.rect.x)
+        except Exception:
+            pass
 
     def update(self, dt=0):
         # Keep onscreen rect in sync with background offset
@@ -1040,7 +1062,18 @@ class Spike(pygame.sprite.Sprite):
                 self.world_x = random.randrange(center_safe_max, max_x + 1) if center_safe_max < max_x else max_x
 
         # Initial on-screen rect uses background offset
-        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y + self.background.rect.y))
+        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
+
+        # Extra safety: ensure spike appears to the right of player on-screen
+        try:
+            if player is not None:
+                player_screen_right = player.rect.right
+                min_screen_x = player_screen_right + safe_distance
+                if self.rect.x < min_screen_x:
+                    self.world_x = max(min_screen_x - self.background.rect.x, 0)
+                    self.rect.x = int(self.world_x + self.background.rect.x)
+        except Exception:
+            pass
 
     def update(self, dt=0):
         # Keep onscreen rect in sync with background offset

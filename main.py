@@ -84,7 +84,7 @@ class Main:
         
         # create boss and add to active sprites (boss is not added to `self.enemies`
         # so regular bullets/blades won't auto-delete it; we handle boss hits separately)
-        self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=0)
+        self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=50)
         self.all_sprites.add(self.boss)
 
         for i in range(5):
