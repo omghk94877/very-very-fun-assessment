@@ -11,6 +11,19 @@ class ScreenManager:
         """
         self.app = app
 
+    def change_screen(self, new_screen):
+        """
+        this method take self and the new_screen (str name) as it parameter
+        it will check which name it is and call the funtion
+        """
+        #if the name is on_exit it will call method on_exit
+        if hasattr(self.current_screen, "on_exit"):
+            self.current_screen.on_exit()
+
+        #If the name is on_enter, it will call metod on_enter
+        self.current_screen = new_screen
+        if hasattr(self.current_screen, "on_enter"):
+            self.current_screen.on_enter()
     
     def handle_event(self, event):
         """
@@ -113,10 +126,105 @@ class MainMenu():
         #4 buttons, play, intro, setting or quit
         self.buttons = [
             self.paddle_btn,
-            Button((cx, top + 1*(btn_h+14), btn_w, btn_h), "Play", self.start_game, self.font),
+            Button((cx, top + 1*(btn_h+14), btn_w, btn_h), "Play", self.play_game, self.font),
             Button((cx, top + 2*(btn_h+14), btn_w, btn_h), "Introduction", self.show_intro, self.font),
-            Button((cx, top + 3*(btn_h+14), btn_w, btn_h), "Setting", self.setting, self.font),
+            Button((cx, top + 3*(btn_h+14), btn_w, btn_h), "load Save", self.load_save, self.font),
             Button((cx, top + 4*(btn_h+14), btn_w, btn_h), "Quit", self.quit_game, self.font),
         ]
+    def handle_event(self, event):
+        """
+        this method will handle the events during the main menu screen
+        it take self and the event as its parameter
+        """
+
+        #exccute the function if one of the button is clicked
+        for b in self.buttons:
+            b.handle_event(event)
+    
+    def draw(self, surface):
+        """
+        this method will draw the main menu screen
+        it take self and the surface as its parameter
+        """
+
+        #fill colour for the 
+        surface.fill((18, 20, 28))
+        title = self.title_font.render("Monster  Smash", True, (255, 220, 60))
+        surface.blit(title, title.get_rect(center=(self.app.size[0]//2, 100)))
+
+        for b in self.buttons:
+            b.draw(surface)
+
     def  play_game(self):
+        self.app.change_screen(MainMenu(self.app))
+
+    def show_intro(self):
+        self.app.change_screen(ShowIntro(self.app))
+
+    def load_save(self):
+        self.app.change_screen(MainMenu(self.app))
+    
+    def quit_game(self):
+        self.app.quit()
+
+class ShowIntro(ScreenManager):
+    def __init__(self, app):
+        super().__init__(app)
+        self.font = pygame.font.SysFont(None, 24)
+        self.intro_index = 0
+
+    def handle_event(self, event):
+        """
+        this method will handle the events during the introduction screen
+        it take self and the event as its parameter
+        """
+        #if user click ESC
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.app.change_screen(MainMenu(self.app))
+
+        if event.type == pygame.KEYDOWN and (event.key == pygame.K_LEFT or event.key == pygame.K_a) and self.intro_index != 0 :
+            pass
+        elif event.type == pygame.KEYDOWN and (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and self.intro_index != 5:
+            pass
+        elif event.type == pygame.KEYDOWN and (event.key == pygame.K_LEFT or event.key == pygame.K_a) and self.intro_index == 0 :
+            pass
+        elif event.type == pygame.KEYDOWN and (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and self.intro_index == 5 :
+            pass
+
+
+    def draw(self, surface):
+        """
+        this method will draw the introduction screen
+        it take self and the surface as its parameter
+        """
+        surface.fill((12, 12, 40))
+        for i, line in enumerate(self.lines):
+            txt = self.font.render(line, True, (230,230,230))
+            surface.blit(txt, (40, 40 + i*28))
+
+class MakeSave(ScreenManager):
+    def __init__(self, app):
+        super().__init__(app)
+        self.font = pygame.font.SysFont(None, 24)
+    
+    def load_save(self):
         pass
+
+    def make_save(self):
+        pass
+
+class MakeWhiteScreem(ScreenManager):
+    def __init__(self):
+        pass
+
+class DeathCount(ScreenManager):
+    def __init__(self):
+        self.death_count = 0 
+
+    def add_death_count(self):
+        self.death_count += 1
+
+    def death_count_keeper(self):
+        self.in_game = False
+        while self.in_game == True:
+            pass
