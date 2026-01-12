@@ -32,16 +32,17 @@ class Main:
             "smt/Sounds/music2.mp3",
             "smt/Sounds/music3.mp3"
         ]
-        try:
-            # ensure mixer is initialized (pygame.init usually does this, but be safe)
-            if not pygame.mixer.get_init():
-                pygame.mixer.init()
-            self.bgm = random.choice(bgm_files)
-            pygame.mixer.music.load(self.bgm)
-            pygame.mixer.music.play(-1)
-        except Exception:
-            # audio failure shouldn't stop the game; continue silently
-            pass
+       
+        pygame.mixer.init()
+        self.bgm = random.choice(bgm_files)
+        self.music = pygame.mixer.music.load(self.bgm)
+        pygame.mixer.music.play(-1)
+        pygame.mixer.music.set_volume(0.2)
+        
+        
+
+        
+        
 
         background_image = pygame.image.load("smt/Images/Battleground1.png")
         background_image = pygame.transform.scale(background_image, (10000, 600))
@@ -66,7 +67,7 @@ class Main:
 
         #obstacles live in world coordinates (move with background)
         self.obstacles = pygame.sprite.Group()
-        for i in range(8):
+        for i in range(16):
             rock = sprite.Rock(self.background, player=self.player)
             self.obstacles.add(rock)
             self.all_sprites.add(rock)
@@ -76,14 +77,14 @@ class Main:
         self.enemies = pygame.sprite.Group()
         
         # Spawn regular enemies (keep other enemies behavior unchanged)
-        for i in range(9):
+        for i in range(15):
             enemy = sprite.Enemy(self.player, self.background)
             self.enemies.add(enemy)
             self.all_sprites.add(enemy)
         
         # create boss and add to active sprites (boss is not added to `self.enemies`
         # so regular bullets/blades won't auto-delete it; we handle boss hits separately)
-        self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=50)
+        self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=0)
         self.all_sprites.add(self.boss)
 
         for i in range(5):

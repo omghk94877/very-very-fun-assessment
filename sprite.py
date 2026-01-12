@@ -9,6 +9,10 @@ class Player(pygame.sprite.Sprite):
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
+        #setting sound effect for player
+        self.die_sound = pygame.mixer.Sound("smt/Sounds/die.wav")
+        self.jump_sound = pygame.mixer.Sound("smt/Sounds/jump.wav")
+        self.jump_sound.set_volume(0.3)
 
         #images of different actions
         # Use simple Surfaces so code can run without external image files
@@ -98,6 +102,7 @@ class Player(pygame.sprite.Sprite):
 
     def move_up(self):
         # jump only when on ground
+        self.jump_sound.play()
         if not self.on_ground:
             return
         # switch to jump animation
@@ -111,6 +116,7 @@ class Player(pygame.sprite.Sprite):
         
 
     def death(self):
+        self.die_sound.play()
         self.set_animation('die')
         # don't kill the sprite here; animation/state can handle further logic
         
@@ -259,6 +265,7 @@ class Enemy(pygame.sprite.Sprite):
             pygame.image.load("smt/Images/monster_bat1.gif").convert_alpha(),
             pygame.image.load("smt/Images/monster_bat2.gif").convert_alpha(),
         ]
+        
 
         # Only regular enemy types (0=root, 1=bat)
         self.enemy_type = random.randint(0, 1)
@@ -282,25 +289,25 @@ class Enemy(pygame.sprite.Sprite):
         # World spawn range
         enemy_w = self.image.get_width()
         bg_w = max(1, self.background.image.get_width())
-        min_x = 0
         max_x = max(0, bg_w - enemy_w)
 
         # compute player's world x (screen x - background offset)
         try:
             player_world_x = self.player.rect.x - self.background.rect.x
         except Exception:
-            player_world_x = None
+            player_world_x = 0
 
         safe_distance = 200  # pixels; avoid spawning too close to player
-
-        # choose random spawn, avoiding player within safe_distance when possible
-        self.world_x = random.randint(min_x, max_x) if max_x >= min_x else 0
-        if player_world_x is not None:
-            for _ in range(50):
-                candidate = random.randint(min_x, max_x)
-                if abs(candidate - player_world_x) >= safe_distance:
-                    self.world_x = candidate
-                    break
+        
+        # Only spawn to the right of the player
+        min_x = player_world_x + safe_distance
+        
+        # choose random spawn to the right of player
+        if max_x > min_x:
+            self.world_x = random.randint(min_x, max_x)
+        else:
+            # fallback if spawn range is invalid
+            self.world_x = player_world_x + safe_distance
 
         # vertical position relative to player
         self.world_y = self.player.rect.centery - (self.image.get_height() // 2)
@@ -941,24 +948,28 @@ class Rock(pygame.sprite.Sprite):
         max_x = max(0, self.background.image.get_width() - self.width)
         max_y = max(0, self.background.image.get_height() - self.height)
 
-        # Try to avoid spawning too close to the player if player provided
-        def _random_x_avoiding_player():
+        # Spawn to the right of the player
+        def _random_x_right_of_player():
             if player is None:
                 return random.randrange(0, max_x + 1) if max_x >= 0 else 0
             try:
                 player_world_x = player.rect.x - self.background.rect.x
             except Exception:
                 return random.randrange(0, max_x + 1) if max_x >= 0 else 0
-            # retry up to N times
-            for _ in range(50):
-                candidate = random.randrange(0, max_x + 1) if max_x >= 0 else 0
-                if abs(candidate - player_world_x) >= safe_distance:
-                    return candidate
-            # fallback to any position if retries failed
-            return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            # Only spawn to the right of player with safe distance
+            min_spawn_x = player_world_x + safe_distance
+            if max_x > min_spawn_x:
+                return random.randrange(min_spawn_x, max_x + 1)
+            else:
+                # fallback if range is invalid
+                return min_spawn_x
 
-        self.world_x = _random_x_avoiding_player()
-        self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
+        self.world_x = _random_x_right_of_player()
+        #self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
+        if player is not None:
+            self.world_y = player.rect.centery - (self.image.get_height() // 2)
+        else:
+            self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
 
         # If still in center band (old heuristic), move to edge (minor fallback)
         center_safe_min = int(max_x * 0.3)
@@ -988,7 +999,7 @@ class Spike(pygame.sprite.Sprite):
         self.background = background
 
         # Load and prepare image
-        self.image = pygame.image.load("smt/Images/spike.png")#.convert_alpha()
+        self.image = pygame.image.load("smt/Images/spike.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, size)
         self.width = self.image.get_width()
         self.height = self.image.get_height()
@@ -997,21 +1008,27 @@ class Spike(pygame.sprite.Sprite):
         max_x = max(0, self.background.image.get_width() - self.width)
         max_y = max(0, self.background.image.get_height() - self.height)
 
-        def _random_x_avoiding_player():
+        def _random_x_right_of_player():
             if player is None:
                 return random.randrange(0, max_x + 1) if max_x >= 0 else 0
             try:
                 player_world_x = player.rect.x - self.background.rect.x
             except Exception:
                 return random.randrange(0, max_x + 1) if max_x >= 0 else 0
-            for _ in range(50):
-                candidate = random.randrange(0, max_x + 1) if max_x >= 0 else 0
-                if abs(candidate - player_world_x) >= safe_distance:
-                    return candidate
-            return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            # Only spawn to the right of player with safe distance
+            min_spawn_x = player_world_x + safe_distance
+            if max_x > min_spawn_x:
+                return random.randrange(min_spawn_x, max_x + 1)
+            else:
+                # fallback if range is invalid
+                return min_spawn_x
 
-        self.world_x = _random_x_avoiding_player()
-        self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
+        self.world_x = _random_x_right_of_player()
+        # Spawn at player's height (same y position)
+        if player is not None:
+            self.world_y = player.rect.centery - (self.image.get_height() // 2)
+        else:
+            self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
 
         # If spawned in center band, move to edge (minor fallback)
         center_safe_min = int(max_x * 0.3)
