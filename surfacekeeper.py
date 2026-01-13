@@ -131,6 +131,7 @@ class MainMenu():
             Button((cx, top + 3*(btn_h+14), btn_w, btn_h), "load Save", self.load_save, self.font),
             Button((cx, top + 4*(btn_h+14), btn_w, btn_h), "Quit", self.quit_game, self.font),
         ]
+        
     def handle_event(self, event):
         """
         this method will handle the events during the main menu screen

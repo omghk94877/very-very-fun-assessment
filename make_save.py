@@ -1,0 +1,160 @@
+import json
+import os
+
+
+class SaveSystem:
+    """
+    Handles saving and loading game data for players.
+    Saves: name, progress (distance/level), death_count
+    """
+    
+    def __init__(self, save_dir="saves"):
+        """Initialize the save system with a directory for save files."""
+        self.save_dir = save_dir
+        # Create saves directory if it doesn't exist
+        if not os.path.exists(self.save_dir):
+            os.makedirs(self.save_dir)
+    
+    def get_save_path(self, player_name):
+        """Get the file path for a specific player's save file."""
+        # Sanitize player name for use in filename
+        safe_name = "".join(c if c.isalnum() or c in (' ', '_', '-') else '_' for c in player_name)
+        return os.path.join(self.save_dir, f"{safe_name}_save.json")
+    
+    def save_game(self, player_name, progress, death_count):
+        """
+        Save the game state to a JSON file.
+        
+        Args:
+            player_name (str): The name of the player
+            progress (int/float): Current progress (distance, level, etc.)
+            death_count (int): Number of deaths
+            
+        Returns:
+            bool: True if save was successful, False otherwise
+        """
+        try:
+            save_data = {
+                "player_name": player_name,
+                "progress": progress,
+                "death_count": death_count
+            }
+            
+            save_path = self.get_save_path(player_name)
+            with open(save_path, 'w') as f:
+                json.dump(save_data, f, indent=4)
+            
+            print(f"Game saved successfully for {player_name}")
+            return True
+        except Exception as e:
+            print(f"Error saving game: {e}")
+            return False
+    
+    def load_game(self, player_name):
+        """
+        Load the game state from a JSON file.
+        
+        Args:
+            player_name (str): The name of the player to load
+            
+        Returns:
+            dict: Dictionary containing player_name, progress, death_count, and last_saved
+            or None if the save file doesn't exist or an error occurs
+        """
+        try:
+            save_path = self.get_save_path(player_name)
+            
+            if not os.path.exists(save_path):
+                print(f"No save file found for {player_name}")
+                return None
+            
+            with open(save_path, 'r') as f:
+                save_data = json.load(f)
+            
+            print(f"Game loaded successfully for {player_name}")
+            return save_data
+        except Exception as e:
+            print(f"Error loading game: {e}")
+            return None
+    
+    def list_saves(self):
+        """
+        Get a list of all available save files.
+        
+        Returns:
+            list: List of dictionaries containing save file information
+        """
+        saves = []
+        try:
+            if os.path.exists(self.save_dir):
+                for filename in os.listdir(self.save_dir):
+                    if filename.endswith("_save.json"):
+                        filepath = os.path.join(self.save_dir, filename)
+                        try:
+                            with open(filepath, 'r') as f:
+                                data = json.load(f)
+                                saves.append(data)
+                        except Exception as e:
+                            print(f"Error reading {filename}: {e}")
+        except Exception as e:
+            print(f"Error listing saves: {e}")
+        
+        return saves
+    
+    def delete_save(self, player_name):
+        """
+        Delete a save file for a player.
+        
+        Args:
+            player_name (str): The name of the player to delete
+            
+        Returns:
+            bool: True if deletion was successful, False otherwise
+        """
+        try:
+            save_path = self.get_save_path(player_name)
+            if os.path.exists(save_path):
+                os.remove(save_path)
+                print(f"Save file deleted for {player_name}")
+                return True
+            else:
+                print(f"No save file found for {player_name}")
+                return False
+        except Exception as e:
+            print(f"Error deleting save: {e}")
+            return False
+    
+    def save_exists(self, player_name):
+        """
+        Check if a save file exists for a player.
+        
+        Args:
+            player_name (str): The name of the player
+            
+        Returns:
+            bool: True if save exists, False otherwise
+        """
+        save_path = self.get_save_path(player_name)
+        return os.path.exists(save_path)
+
+
+# Example usage for testing
+if __name__ == "__main__":
+    # Create save system instance
+    save_system = SaveSystem()
+    
+    # Save a game
+    save_system.save_game("Hero", progress=1500, death_count=5)
+    
+    # Load the game
+    loaded_data = save_system.load_game("Hero")
+    if loaded_data:
+        print(f"Loaded data: {loaded_data}")
+    
+    # List all saves
+    all_saves = save_system.list_saves()
+    print(f"All saves: {all_saves}")
+    
+    # Check if save exists
+    exists = save_system.save_exists("Hero")
+    print(f"Save exists: {exists}")
