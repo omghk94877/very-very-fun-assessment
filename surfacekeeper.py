@@ -1,5 +1,5 @@
 import pygame
-
+import make_save
 class ScreenManager:
     """
     this class will define the base screen
@@ -131,7 +131,7 @@ class MainMenu():
             Button((cx, top + 3*(btn_h+14), btn_w, btn_h), "load Save", self.load_save, self.font),
             Button((cx, top + 4*(btn_h+14), btn_w, btn_h), "Quit", self.quit_game, self.font),
         ]
-        
+
     def handle_event(self, event):
         """
         this method will handle the events during the main menu screen
@@ -217,16 +217,13 @@ class ShowIntro(ScreenManager):
         surface.blit((surface.get_width() // 2 - 20,
                             surface.get_height() - 40))
 
-class MakeSave(ScreenManager):
+class MakeSave(ScreenManager, make_save.SaveSystem):
     def __init__(self, app):
         super().__init__(app)
         self.font = pygame.font.SysFont(None, 24)
     
     def load_save(self):
-        pass
-
-    def make_save(self):
-        pass
+        make_save.SaveSystem.load_game(self)
 
 class MakeWhiteScreem(ScreenManager):
     def __init__(self, app):
