@@ -1079,3 +1079,77 @@ class Spike(pygame.sprite.Sprite):
         # Keep onscreen rect in sync with background offset
         self.rect.x = int(self.world_x + self.background.rect.x)
         self.rect.y = int(self.world_y + self.background.rect.y)
+
+
+
+
+class Portal(pygame.sprite.Sprite):
+    
+    def __init__(self, player, background, screen_width=1920, all_sprites=None, required_hits=50):
+        super().__init__()
+        self.player = player
+        self.background = background
+        self.screen_width = screen_width
+        self.all_sprites = all_sprites
+
+        # load boss frames (safe loads; if missing, create placeholder)
+        try:
+            self.frames = [
+                pygame.image.load("src\Images\portals\portal0.gif"),
+                pygame.image.load("src\Images\portals\portal1.gif"),
+                pygame.image.load("src\Images\portals\portal2.gif"),
+                pygame.image.load("src\Images\portals\portal3.gif"),
+                pygame.image.load("src\Images\portals\portal4.gif")
+            ]
+        except Exception:
+            # fallback: two colored surfaces
+            f1 = pygame.Surface((200, 600), pygame.SRCALPHA); f1.fill((150, 30, 30))
+            f2 = pygame.Surface((200, 600), pygame.SRCALPHA); f2.fill((180, 60, 60))
+            self.frames = [f1, f2]
+
+        #portal size
+        self.size = (80, 150)
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.frame_duration = 400
+        self.image = pygame.transform.scale(self.frames[self.frame_index], self.size)
+
+        # world spawn: near the end but visible on screen
+        enemy_w = self.image.get_width()
+        bg_w = max(1, self.background.image.get_width())
+        max_x = max(0, bg_w - enemy_w)
+        # prefer near end but not off-screen: end_margin and visible clamp
+        end_margin = 300
+        # ensure visible on initial screen (background.rect.x likely 0)
+        self.world_x = 8200
+        # fallback if negative
+        if self.world_x < 0:
+            self.world_x = max(0, max_x - end_margin)
+
+        # vertical position centered on player
+        self.world_y = self.player.rect.centery - (self.image.get_height() // 2)
+
+        # onscreen rect
+        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
+
+        # boss stationary (no world_x change)
+        self.speed = 0.0
+
+        # hit requirement
+        self.required_hits = required_hits
+        self.hits = 0
+
+
+    def update(self, dt=0):
+        # animation
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_duration:
+            self.frame_timer = 0
+            self.frame_index = (self.frame_index + 1) % len(self.frames)
+            center = self.rect.center
+            self.image = pygame.transform.scale(self.frames[self.frame_index], self.size)
+            self.rect = self.image.get_rect(center=center)
+
+        # ensure rect follows background offset
+        self.rect.x = int(self.world_x + self.background.rect.x)
+        self.rect.y = self.world_y
