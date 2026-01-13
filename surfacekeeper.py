@@ -155,7 +155,7 @@ class MainMenu():
         for b in self.buttons:
             b.draw(surface)
 
-    def  play_game(self):
+    def play_game(self):
         self.app.change_screen(MainMenu(self.app))
 
     def show_intro(self):
@@ -170,37 +170,51 @@ class MainMenu():
 class ShowIntro(ScreenManager):
     def __init__(self, app):
         super().__init__(app)
+
         self.font = pygame.font.SysFont(None, 24)
         self.intro_index = 0
 
-    def handle_event(self, event):
-        """
-        this method will handle the events during the introduction screen
-        it take self and the event as its parameter
-        """
-        #if user click ESC
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            self.app.change_screen(MainMenu(self.app))
+        paths = [
+            "src/images/intro/intro_1.jpg",
+            "src/images/intro/intro_2.jpg",
+            "src/images/intro/intro_3.jpg",
+            "src/images/intro/intro_4.jpg",
+            "src/images/intro/intro_5.jpg"
+        ]
 
-        if event.type == pygame.KEYDOWN and (event.key == pygame.K_LEFT or event.key == pygame.K_a) and self.intro_index != 0 :
-            pass
-        elif event.type == pygame.KEYDOWN and (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and self.intro_index != 5:
-            pass
-        elif event.type == pygame.KEYDOWN and (event.key == pygame.K_LEFT or event.key == pygame.K_a) and self.intro_index == 0 :
-            pass
-        elif event.type == pygame.KEYDOWN and (event.key == pygame.K_RIGHT or event.key == pygame.K_d) and self.intro_index == 5 :
-            pass
+        self.intro_images = []
+        for p in paths:
+            img = pygame.image.load(p).convert()
+            img = pygame.transform.scale(img, (800, 450)) 
+            self.intro_images.append(img)
+
+        self.total = len(self.intro_images)
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN:
+
+            if event.key == pygame.K_ESCAPE:
+                self.app.change_screen(MainMenu(self.app))
+
+            elif event.key in (pygame.K_LEFT, pygame.K_a):
+                self.intro_index -= 1
+
+            elif event.key in (pygame.K_RIGHT, pygame.K_d):
+                self.intro_index += 1
+
+            self.intro_index = max(0, min(self.intro_index, self.total - 1))
 
 
     def draw(self, surface):
-        """
-        this method will draw the introduction screen
-        it take self and the surface as its parameter
-        """
         surface.fill((12, 12, 40))
-        for i, line in enumerate(self.lines):
-            txt = self.font.render(line, True, (230,230,230))
-            surface.blit(txt, (40, 40 + i*28))
+
+        # draw the image in center
+        img = self.intro_images[self.intro_index]
+        rect = img.get_rect(center=surface.get_rect().center)
+        surface.blit(img, rect)
+
+        surface.blit((surface.get_width() // 2 - 20,
+                            surface.get_height() - 40))
 
 class MakeSave(ScreenManager):
     def __init__(self, app):
@@ -214,8 +228,16 @@ class MakeSave(ScreenManager):
         pass
 
 class MakeWhiteScreem(ScreenManager):
-    def __init__(self):
-        pass
+    def __init__(self, app):
+        super().__init__(app)
+
+        self.font = pygame.font.SysFont(None, 24)
+        self.intro_index = 0
+
+    def draw(self, surface):
+        surface.fill((255, 255, 255))
+
+        # draw the image in center
 
 class DeathCount(ScreenManager):
     def __init__(self):
