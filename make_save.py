@@ -138,23 +138,3 @@ class SaveSystem:
         return os.path.exists(save_path)
 
 
-# Example usage for testing
-if __name__ == "__main__":
-    # Create save system instance
-    save_system = SaveSystem()
-    
-    # Save a game
-    save_system.save_game("Hero", progress=1500, death_count=5)
-    
-    # Load the game
-    loaded_data = save_system.load_game("Hero")
-    if loaded_data:
-        print(f"Loaded data: {loaded_data}")
-    
-    # List all saves
-    all_saves = save_system.list_saves()
-    print(f"All saves: {all_saves}")
-    
-    # Check if save exists
-    exists = save_system.save_exists("Hero")
-    print(f"Save exists: {exists}")
