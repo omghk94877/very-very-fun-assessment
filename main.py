@@ -27,10 +27,10 @@ class Main:
     def entities(self):
         # play a random background music file (if available)
         bgm_files = [
-            "smt/Sounds/8bitsong.wav",
-            "smt/Sounds/music1.mp3",
-            "smt/Sounds/music2.mp3",
-            "smt/Sounds/music3.mp3"
+            "src/Sounds/8bitsong.wav",
+            "src/Sounds/music1.mp3",
+            "src/Sounds/music2.mp3",
+            "src/Sounds/music3.mp3"
         ]
        
         pygame.mixer.init()
@@ -44,7 +44,7 @@ class Main:
         
         
 
-        background_image = pygame.image.load("smt/Images/Battleground1.png")
+        background_image = pygame.image.load("src/Images/Battleground1.png")
         background_image = pygame.transform.scale(background_image, (10000, 600))
         
         #Create background sprite for scrolling effect

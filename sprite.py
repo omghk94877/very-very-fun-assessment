@@ -10,33 +10,33 @@ class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         #setting sound effect for player
-        self.die_sound = pygame.mixer.Sound("smt/Sounds/die.wav")
-        self.jump_sound = pygame.mixer.Sound("smt/Sounds/jump.wav")
+        self.die_sound = pygame.mixer.Sound("src/Sounds/die.wav")
+        self.jump_sound = pygame.mixer.Sound("src/Sounds/jump.wav")
         self.jump_sound.set_volume(0.3)
 
         #images of different actions
         # Use simple Surfaces so code can run without external image files
         # load animation frames (some are lists of frames)
-        self.stand = [pygame.image.load("smt/Images/player_animation/frame_03_delay-0.08s.gif")]
+        self.stand = [pygame.image.load("src/Images/player_animation/frame_03_delay-0.08s.gif")]
 
         self.move_l = [
-            pygame.image.load("smt/Images/player_animation/frame_40_delay-0.08s.gif"),
-            pygame.image.load("smt/Images/player_animation/frame_41_delay-0.08s.gif"),
+            pygame.image.load("src/Images/player_animation/frame_40_delay-0.08s.gif"),
+            pygame.image.load("src/Images/player_animation/frame_41_delay-0.08s.gif"),
         ]
 
         self.move_r = [
-            pygame.image.load("smt/Images/player_animation/frame_14_delay-0.08s.gif"),
-            pygame.image.load("smt/Images/player_animation/frame_15_delay-0.08s.gif"),
+            pygame.image.load("src/Images/player_animation/frame_14_delay-0.08s.gif"),
+            pygame.image.load("src/Images/player_animation/frame_15_delay-0.08s.gif"),
         ]
 
         # single-frame surfaces for jump/attack/die (wrap as lists for uniform handling)
-        jump_surf = pygame.image.load("smt/Images/player_animation/frame_jump_delay-0.08s.gif")
+        jump_surf = pygame.image.load("src/Images/player_animation/frame_jump_delay-0.08s.gif")
         
         attack_surf = pygame.Surface((60, 40))
         attack_surf.fill((255, 128, 0))
-        self.die = [pygame.image.load("smt/Images/player_animation/death1.gif"),
-                    pygame.image.load("smt/Images/player_animation/death2.gif"),
-                    pygame.image.load("smt/Images/player_animation/death3.gif"),
+        self.die = [pygame.image.load("src/Images/player_animation/death1.gif"),
+                    pygame.image.load("src/Images/player_animation/death2.gif"),
+                    pygame.image.load("src/Images/player_animation/death3.gif"),
             ]
 
         self.jump = [jump_surf]
@@ -259,12 +259,12 @@ class Enemy(pygame.sprite.Sprite):
 
         # Load and setup enemy image (no boss frames)
         self.frames_root = [
-            pygame.image.load("smt/Images/Root_monster_frame0.gif").convert_alpha(),
-            pygame.image.load("smt/Images/Root_monster_frame1.gif").convert_alpha(),
+            pygame.image.load("src/Images/Root_monster_frame0.gif").convert_alpha(),
+            pygame.image.load("src/Images/Root_monster_frame1.gif").convert_alpha(),
         ]
         self.frames_bat = [
-            pygame.image.load("smt/Images/monster_bat1.gif").convert_alpha(),
-            pygame.image.load("smt/Images/monster_bat2.gif").convert_alpha(),
+            pygame.image.load("src/Images/monster_bat1.gif").convert_alpha(),
+            pygame.image.load("src/Images/monster_bat2.gif").convert_alpha(),
         ]
         
 
@@ -408,8 +408,8 @@ class Boss(pygame.sprite.Sprite):
         # load boss frames (safe loads; if missing, create placeholder)
         try:
             self.frames = [
-                pygame.image.load("smt/Images/enemy_boss.gif").convert_alpha(),
-                pygame.image.load("smt/Images/enemy_boss2.gif").convert_alpha(),
+                pygame.image.load("src/Images/enemy_boss.gif").convert_alpha(),
+                pygame.image.load("src/Images/enemy_boss2.gif").convert_alpha(),
             ]
         except Exception:
             # fallback: two colored surfaces
@@ -651,9 +651,9 @@ class Other_blade(pygame.sprite.Sprite):
         self.offset = offset
         # thin rectangle to look like a blade
         self.frames = [
-            pygame.image.load("smt/Images/frame_0_delay-0.17s.gif").convert_alpha(),
-            pygame.image.load("smt/Images/frame_1_delay-0.17s.gif").convert_alpha(),
-            pygame.image.load("smt/Images/frame_2_delay-0.17s.gif").convert_alpha(),
+            pygame.image.load("src/Images/frame_0_delay-0.17s.gif").convert_alpha(),
+            pygame.image.load("src/Images/frame_1_delay-0.17s.gif").convert_alpha(),
+            pygame.image.load("src/Images/frame_2_delay-0.17s.gif").convert_alpha(),
         ]
         #transforming the images to correct size
         self.frames = [
@@ -715,7 +715,7 @@ class Blade(pygame.sprite.Sprite):
         self.owner = owner
         self.offset = offset
         # thin rectangle to look like a blade
-        self.image = pygame.image.load("smt\Images\Obsidian_sword.png")
+        self.image = pygame.image.load("src\Images\Obsidian_sword.png")
         self.image = pygame.transform.rotate(self.image, -90)
         self.image = pygame.transform.scale(self.image, (100, 35))
         facing = getattr(self.owner, 'facing', 'right')
@@ -747,9 +747,9 @@ class Bullet(pygame.sprite.Sprite):
         self.offset = offset
         self.owner = owner
         self.frames = [
-            pygame.image.load("smt/Images/firebal_0.gif").convert_alpha(),
-            pygame.image.load("smt/Images/firebal_1.gif").convert_alpha(),
-            pygame.image.load("smt/Images/firebal_2.gif").convert_alpha(),
+            pygame.image.load("src/Images/firebal_0.gif").convert_alpha(),
+            pygame.image.load("src/Images/firebal_1.gif").convert_alpha(),
+            pygame.image.load("src/Images/firebal_2.gif").convert_alpha(),
         ]
         # simple rectangle to represent bullet
         self.image = pygame.Surface((10, 5))
@@ -949,7 +949,7 @@ class Rock(pygame.sprite.Sprite):
         self.background = background
 
         # Load and prepare image
-        self.image = pygame.image.load("smt/Images/rock.png").convert_alpha()
+        self.image = pygame.image.load("src/Images/rock.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, size)
         self.width = self.image.get_width()
         self.height = self.image.get_height()
@@ -1021,7 +1021,7 @@ class Spike(pygame.sprite.Sprite):
         self.background = background
 
         # Load and prepare image
-        self.image = pygame.image.load("smt/Images/spike.png").convert_alpha()
+        self.image = pygame.image.load("src/Images/spike.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, size)
         self.width = self.image.get_width()
         self.height = self.image.get_height()
