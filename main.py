@@ -1,14 +1,21 @@
 import random
 import pygame
 import sprite
+import surfacekeeper
 
 class Main:
-    def __init__(self, size= (1000,600)):
-        pygame.init()
+    def __init__(self, size=(1000,600), screen=None):
+        if screen is None:
+            pygame.init()
+            self.screen = pygame.display.set_mode(size)
+            pygame.display.set_caption("Monster Smash - Game")
+            self.owns_display = True
+        else:
+            self.screen = screen
+            self.owns_display = False
+        
         #D - Display configuration
         self.size = size
-        self.screen = pygame.display.set_mode(size)
-        pygame.display.set_caption("Hello, world!")
         #E - Entities
         self.entities()
         #A - Action (broken into ALTER steps)
@@ -21,8 +28,9 @@ class Main:
         self.respawn_delay = 2000  # ms to wait before respawn
         #L - Loop
         self.loop()
-        #Close the game window , set the X
-        pygame.quit()
+        #Close the game window if we own it
+        if self.owns_display:
+            pygame.quit()
 
     def entities(self):
         # play a random background music file (if available)
@@ -270,5 +278,7 @@ class Main:
                     self.game_over = True
 
 
+
 if __name__ == "__main__":
-    Main()
+    app = surfacekeeper.App(size=(1000, 600))
+    app.run()

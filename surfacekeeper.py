@@ -1,5 +1,6 @@
 import pygame
 import make_save
+ 
 class ScreenManager:
     """
     this class will define the base screen
@@ -112,33 +113,55 @@ class Button:
 
 
 
-class MainMenu():
+class MainMenu(ScreenManager):
     def __init__(self, app):
-
-        super().__init__(self, app)
+        super().__init__(app)
         w, h = app.size
-        btn_w, btn_h = 1920, 1080
+        btn_w, btn_h = 200, 50
         cx = w // 2 - btn_w // 2
-        top = h // 2 - 40
+        top = h // 2 - 100
         self.title_font = pygame.font.SysFont(None, 56)
         self.font = pygame.font.SysFont(None, 28)
+
+        # Try to load background image, use solid color if not available
+        try:
+            self.image = pygame.image.load("src/Images/intro/menu.png")
+            self.image = pygame.transform.scale(self.image, (2000, 600))
+            self.image = self.image.convert()
+        except:
+            self.image = None
+
+        # Position image at top-left of screen
+        if self.image:
+            self.rect = self.image.get_rect()
+            self.rect.left = 0
+            self.rect.top = 0
+            self.scroll_speed = 1
         
-        #4 buttons, play, intro, setting or quit
+        # 4 buttons: play, intro, load save, quit
         self.buttons = [
-            self.paddle_btn,
             Button((cx, top + 1*(btn_h+14), btn_w, btn_h), "Play", self.play_game, self.font),
             Button((cx, top + 2*(btn_h+14), btn_w, btn_h), "Introduction", self.show_intro, self.font),
-            Button((cx, top + 3*(btn_h+14), btn_w, btn_h), "load Save", self.load_save, self.font),
+            Button((cx, top + 3*(btn_h+14), btn_w, btn_h), "Load Save", self.load_save, self.font),
             Button((cx, top + 4*(btn_h+14), btn_w, btn_h), "Quit", self.quit_game, self.font),
         ]
+
+    def update(self):
+        '''Called automatically during Refresh to update sprite's position.'''
+        if self.image:
+            # Move 1 pixel to the left on each frame (scrolling effect)
+            self.rect.left -= self.scroll_speed
+
+            # If we run out of image on the right, reset the left side again
+            if self.rect.right <= 0:
+                self.rect.left = 0
 
     def handle_event(self, event):
         """
         this method will handle the events during the main menu screen
         it take self and the event as its parameter
         """
-
-        #exccute the function if one of the button is clicked
+        # execute the function if one of the button is clicked
         for b in self.buttons:
             b.handle_event(event)
     
@@ -147,23 +170,28 @@ class MainMenu():
         this method will draw the main menu screen
         it take self and the surface as its parameter
         """
-
-        #fill colour for the 
+        # fill background color
         surface.fill((18, 20, 28))
-        title = self.title_font.render("Monster  Smash", True, (255, 220, 60))
-        surface.blit(title, title.get_rect(center=(self.app.size[0]//2, 100)))
+        
+        # draw scrolling background image if available
+        if self.image:
+            surface.blit(self.image, self.rect)
+        
+        title = self.title_font.render("Monster Smash", True, (255, 220, 60))
+        surface.blit(title, title.get_rect(center=(self.app.size[0]//2, 50)))
 
         for b in self.buttons:
             b.draw(surface)
 
     def play_game(self):
-        self.app.change_screen(MainMenu(self.app))
+        # Start the actual game
+        self.app.start_game()
 
     def show_intro(self):
         self.app.change_screen(ShowIntro(self.app))
 
     def load_save(self):
-        self.app.change_screen(MainMenu(self.app))
+        self.app.change_screen(MakeSave(self.app))
     
     def quit_game(self):
         self.app.quit()
@@ -176,20 +204,31 @@ class ShowIntro(ScreenManager):
         self.intro_index = 0
 
         paths = [
-            "src/images/intro/intro_1.jpg",
-            "src/images/intro/intro_2.jpg",
-            "src/images/intro/intro_3.jpg",
-            "src/images/intro/intro_4.jpg",
-            "src/images/intro/intro_5.jpg"
+            "src/Images/intro/intro_1.jpg",
+            "src/Images/intro/intro_2.jpg",
+            "src/Images/intro/intro_3.jpg",
+            "src/Images/intro/intro_4.jpg",
+            "src/Images/intro/intro_5.jpg"
         ]
 
         self.intro_images = []
         for p in paths:
-            img = pygame.image.load(p).convert()
-            img = pygame.transform.scale(img, (800, 450)) 
-            self.intro_images.append(img)
+            try:
+                img = pygame.image.load(p)
+                img = pygame.transform.scale(img, (800, 450))
+                img = img.convert()
+                self.intro_images.append(img)
+            except:
+                # Skip images that don't exist
+                pass
 
         self.total = len(self.intro_images)
+        if self.total == 0:
+            # Create a placeholder surface if no images loaded
+            placeholder = pygame.Surface((800, 450))
+            placeholder.fill((50, 50, 50))
+            self.intro_images.append(placeholder)
+            self.total = 1
 
     def handle_event(self, event):
         if event.type == pygame.KEYDOWN:
@@ -205,7 +244,6 @@ class ShowIntro(ScreenManager):
 
             self.intro_index = max(0, min(self.intro_index, self.total - 1))
 
-
     def draw(self, surface):
         surface.fill((12, 12, 40))
 
@@ -214,28 +252,68 @@ class ShowIntro(ScreenManager):
         rect = img.get_rect(center=surface.get_rect().center)
         surface.blit(img, rect)
 
-        surface.blit((surface.get_width() // 2 - 20,
+        # Draw instruction text
+        info_text = self.font.render(f"Image {self.intro_index + 1}/{self.total} - Arrow Keys or A/D to navigate - ESC to return", True, (255, 255, 255))
+        surface.blit(info_text, (surface.get_width() // 2 - info_text.get_width() // 2,
                             surface.get_height() - 40))
 
 class MakeSave(ScreenManager, make_save.SaveSystem):
     def __init__(self, app):
-        super().__init__(app)
+        ScreenManager.__init__(self, app)
+        make_save.SaveSystem.__init__(self)
         self.font = pygame.font.SysFont(None, 24)
+        self.save_list = []
+        self.selected_index = 0
+        self.load_save_files()
     
-    def load_save(self):
-        make_save.SaveSystem.load_game(self)
+    def load_save_files(self):
+        """Load available save files from the save directory"""
+        import os
+        save_dir = "saves"
+        if os.path.exists(save_dir):
+            self.save_list = [f for f in os.listdir(save_dir) if f.endswith('.json')]
+        if not self.save_list:
+            self.save_list = ["No saves available"]
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self.app.change_screen(MainMenu(self.app))
+            elif event.key == pygame.K_UP and len(self.save_list) > 1:
+                self.selected_index = (self.selected_index - 1) % len(self.save_list)
+            elif event.key == pygame.K_DOWN and len(self.save_list) > 1:
+                self.selected_index = (self.selected_index + 1) % len(self.save_list)
+            elif event.key == pygame.K_RETURN and self.save_list[0] != "No saves available":
+                # Load the selected save
+                try:
+                    make_save.SaveSystem.load_game(self, self.save_list[self.selected_index])
+                    self.app.start_game()
+                except:
+                    pass
+
+    def draw(self, surface):
+        surface.fill((18, 20, 28))
+        title = self.font.render("Load Save", True, (255, 220, 60))
+        surface.blit(title, title.get_rect(center=(self.app.size[0]//2, 50)))
+        
+        y_offset = 150
+        for i, save in enumerate(self.save_list):
+            color = (255, 255, 0) if i == self.selected_index else (255, 255, 255)
+            text = self.font.render(f"{'> ' if i == self.selected_index else '  '}{save}", True, color)
+            surface.blit(text, (100, y_offset + i * 40))
+        
+        instruction = self.font.render("UP/DOWN to select, ENTER to load, ESC to return", True, (200, 200, 200))
+        surface.blit(instruction, (100, self.app.size[1] - 50))
+
 
 class MakeWhiteScreem(ScreenManager):
     def __init__(self, app):
         super().__init__(app)
-
         self.font = pygame.font.SysFont(None, 24)
-        self.intro_index = 0
 
     def draw(self, surface):
         surface.fill((255, 255, 255))
 
-        # draw the image in center
 
 class DeathCount(ScreenManager):
     def __init__(self):
@@ -248,3 +326,60 @@ class DeathCount(ScreenManager):
         self.in_game = False
         while self.in_game == True:
             pass
+
+
+class App:
+    """Main application class that manages screen transitions and the game loop"""
+    def __init__(self, size=(1000, 600)):
+        pygame.init()
+        self.size = size
+        self.screen = pygame.display.set_mode(size)
+        pygame.display.set_caption("Monster Smash")
+        self.clock = pygame.time.Clock()
+        self.running = True
+        self.current_screen = None
+        self.game_instance = None
+        
+        # Start with main menu
+        self.change_screen(MainMenu(self))
+        
+    def change_screen(self, new_screen):
+        """Change to a new screen"""
+        if self.current_screen and hasattr(self.current_screen, "on_exit"):
+            self.current_screen.on_exit()
+        
+        self.current_screen = new_screen
+        if hasattr(self.current_screen, "on_enter"):
+            self.current_screen.on_enter()
+    
+    def start_game(self):
+        """Start the actual game"""
+        # Import here to avoid circular imports
+        import main
+        self.game_instance = main.Main(size=self.size)
+        # After game ends, return to main menu
+        self.change_screen(MainMenu(self))
+    
+    def quit(self):
+        """Quit the application"""
+        self.running = False
+    
+    def run(self):
+        """Main application loop"""
+        while self.running:
+            dt = self.clock.tick(30)
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                if self.current_screen:
+                    self.current_screen.handle_event(event)
+            
+            if self.current_screen:
+                self.current_screen.update()
+                self.screen.fill((0, 0, 0))
+                self.current_screen.draw(self.screen)
+            
+            pygame.display.flip()
+        
+        pygame.quit()
