@@ -253,9 +253,6 @@ class ShowIntro(ScreenManager):
         surface.blit(img, rect)
 
         # Draw instruction text
-        info_text = self.font.render(f"Image {self.intro_index + 1}/{self.total} - Arrow Keys or A/D to navigate - ESC to return", True, (255, 255, 255))
-        surface.blit(info_text, (surface.get_width() // 2 - info_text.get_width() // 2,
-                            surface.get_height() - 40))
 
 class MakeSave(ScreenManager, make_save.SaveSystem):
     def __init__(self, app):
