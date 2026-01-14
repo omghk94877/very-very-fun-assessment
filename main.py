@@ -192,7 +192,7 @@ class Main:
             if not self.game_over:
                 #normal gameplay: update everything and check collisions
                 self.all_sprites.update(dt)
-                self.check_collision()
+                #self.check_collision()
             else:
                 #freeze everything except allow the player's death animation to advance
                 #stop background so world does not move
