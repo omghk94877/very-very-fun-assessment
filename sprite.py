@@ -1121,7 +1121,7 @@ class Portal(pygame.sprite.Sprite):
         # prefer near end but not off-screen: end_margin and visible clamp
         end_margin = 300
         # ensure visible on initial screen (background.rect.x likely 0)
-        self.world_x = 8200
+        self.world_x = 8530
         # fallback if negative
         if self.world_x < 0:
             self.world_x = max(0, max_x - end_margin)
