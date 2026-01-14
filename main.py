@@ -184,8 +184,6 @@ class Main:
             if not self.game_over:
                 #normal gameplay: update everything and check collisions
                 self.all_sprites.update(dt)
-                #update background scrolling
-                #self.background.update()
                 self.check_collision()
             else:
                 #freeze everything except allow the player's death animation to advance
@@ -254,6 +252,13 @@ class Main:
                         self.player.death()
                         self.game_over = True
                         return
+                    
+            if self.player.rect.colliderect(self.portal.rect):
+                #here to put the winning sreen
+                
+                self.game_over = True
+                self.keepGoing = False
+
 
             """# blade cancels boss projectiles (blade destroys any boss fireball it touches)
             for blade in list(self.all_sprites.sprites()):
