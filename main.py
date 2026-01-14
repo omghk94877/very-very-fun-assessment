@@ -72,6 +72,8 @@ class Main:
             self.obstacles.add(rock)
             self.all_sprites.add(rock)
 
+        self.portal = sprite.Portal(self.player, self.background)
+        self.all_sprites.add(self.portal)
 
         #group to hold enemies
         self.enemies = pygame.sprite.Group()
@@ -84,6 +86,7 @@ class Main:
         
         # create boss and add to active sprites (boss is not added to `self.enemies`
         # so regular bullets/blades won't auto-delete it; we handle boss hits separately)
+        # boss is added AFTER portal so it renders on top
         self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=50)
         self.all_sprites.add(self.boss)
 
