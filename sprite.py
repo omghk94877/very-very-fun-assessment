@@ -259,12 +259,12 @@ class Enemy(pygame.sprite.Sprite):
 
         # Load and setup enemy image (no boss frames)
         self.frames_root = [
-            pygame.image.load("src/Images/Root_monster_frame0.gif").convert_alpha(),
-            pygame.image.load("src/Images/Root_monster_frame1.gif").convert_alpha(),
+            pygame.image.load("src/Images/enemy/root/Root_monster_frame0.gif").convert_alpha(),
+            pygame.image.load("src/Images/enemy/root/Root_monster_frame1.gif").convert_alpha(),
         ]
         self.frames_bat = [
-            pygame.image.load("src/Images/monster_bat1.gif").convert_alpha(),
-            pygame.image.load("src/Images/monster_bat2.gif").convert_alpha(),
+            pygame.image.load("src/Images/enemy/bat/monster_bat1.gif").convert_alpha(),
+            pygame.image.load("src/Images/enemy/bat/monster_bat2.gif").convert_alpha(),
         ]
         
 
@@ -408,8 +408,8 @@ class Boss(pygame.sprite.Sprite):
         # load boss frames (safe loads; if missing, create placeholder)
         try:
             self.frames = [
-                pygame.image.load("src/Images/enemy_boss.gif").convert_alpha(),
-                pygame.image.load("src/Images/enemy_boss2.gif").convert_alpha(),
+                pygame.image.load("src/Images/enemy/corc_boss/enemy_boss.gif").convert_alpha(),
+                pygame.image.load("src/Images/enemy/corc_boss/enemy_boss2.gif").convert_alpha(),
             ]
         except Exception:
             # fallback: two colored surfaces
@@ -651,9 +651,9 @@ class Other_blade(pygame.sprite.Sprite):
         self.offset = offset
         # thin rectangle to look like a blade
         self.frames = [
-            pygame.image.load("src/Images/frame_0_delay-0.17s.gif").convert_alpha(),
-            pygame.image.load("src/Images/frame_1_delay-0.17s.gif").convert_alpha(),
-            pygame.image.load("src/Images/frame_2_delay-0.17s.gif").convert_alpha(),
+            pygame.image.load("src/Images/weapon/sword/fire/frame_0_delay-0.17s.gif").convert_alpha(),
+            pygame.image.load("src/Images/weapon/sword/fire/frame_1_delay-0.17s.gif").convert_alpha(),
+            pygame.image.load("src/Images/weapon/sword/fire/frame_2_delay-0.17s.gif").convert_alpha(),
         ]
         #transforming the images to correct size
         self.frames = [
@@ -715,7 +715,7 @@ class Blade(pygame.sprite.Sprite):
         self.owner = owner
         self.offset = offset
         # thin rectangle to look like a blade
-        self.image = pygame.image.load("src\Images\Obsidian_sword.png")
+        self.image = pygame.image.load("src/Images/weapon/sword/obsidian/Obsidian_sword.png")
         self.image = pygame.transform.rotate(self.image, -90)
         self.image = pygame.transform.scale(self.image, (100, 35))
         facing = getattr(self.owner, 'facing', 'right')
@@ -747,9 +747,9 @@ class Bullet(pygame.sprite.Sprite):
         self.offset = offset
         self.owner = owner
         self.frames = [
-            pygame.image.load("src/Images/firebal_0.gif").convert_alpha(),
-            pygame.image.load("src/Images/firebal_1.gif").convert_alpha(),
-            pygame.image.load("src/Images/firebal_2.gif").convert_alpha(),
+            pygame.image.load("src/Images/weapon/fireball/firebal_0.gif").convert_alpha(),
+            pygame.image.load("src/Images/weapon/fireball/firebal_1.gif").convert_alpha(),
+            pygame.image.load("src/Images/weapon/fireball/firebal_2.gif").convert_alpha(),
         ]
         # simple rectangle to represent bullet
         self.image = pygame.Surface((10, 5))
@@ -949,7 +949,7 @@ class Rock(pygame.sprite.Sprite):
         self.background = background
 
         # Load and prepare image
-        self.image = pygame.image.load("src/Images/rock.png").convert_alpha()
+        self.image = pygame.image.load("src/Images/map/obstacles/rock.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, size)
         self.width = self.image.get_width()
         self.height = self.image.get_height()
@@ -1021,7 +1021,7 @@ class Spike(pygame.sprite.Sprite):
         self.background = background
 
         # Load and prepare image
-        self.image = pygame.image.load("src/Images/spike.png").convert_alpha()
+        self.image = pygame.image.load("src/Images/map/obstacles/spike.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, size)
         self.width = self.image.get_width()
         self.height = self.image.get_height()
