@@ -1,4 +1,4 @@
-import json
+from json_loader import load_json, dump_json
 import os
 
 
@@ -21,7 +21,7 @@ class SaveSystem:
         safe_name = "".join(c if c.isalnum() or c in (' ', '_', '-') else '_' for c in player_name)
         return os.path.join(self.save_dir, f"{safe_name}_save.json")
     
-    def save_game(self, player_name, progress, death_count):
+    def save_game(self, player_name, progress, death_count, level1_completed=False):
         """
         Save the game state to a JSON file.
         
@@ -37,12 +37,12 @@ class SaveSystem:
             save_data = {
                 "player_name": player_name,
                 "progress": progress,
-                "death_count": death_count
+                "death_count": death_count,
+                "level1_completed": level1_completed
             }
             
             save_path = self.get_save_path(player_name)
-            with open(save_path, 'w') as f:
-                json.dump(save_data, f, indent=4)
+            dump_json(save_data, save_path)
             
             print(f"Game saved successfully for {player_name}")
             return True
@@ -68,8 +68,7 @@ class SaveSystem:
                 print(f"No save file found for {player_name}")
                 return None
             
-            with open(save_path, 'r') as f:
-                save_data = json.load(f)
+            save_data = load_json(save_path)
             
             print(f"Game loaded successfully for {player_name}")
             return save_data
@@ -91,9 +90,8 @@ class SaveSystem:
                     if filename.endswith("_save.json"):
                         filepath = os.path.join(self.save_dir, filename)
                         try:
-                            with open(filepath, 'r') as f:
-                                data = json.load(f)
-                                saves.append(data)
+                            data = load_json(filepath)
+                            saves.append(data)
                         except Exception as e:
                             print(f"Error reading {filename}: {e}")
         except Exception as e:

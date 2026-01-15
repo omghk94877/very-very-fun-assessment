@@ -269,8 +269,8 @@ class Enemy(pygame.sprite.Sprite):
         ]
 
         self.frames_tree = [
-            pygame.image.load("src/Images/enemy/monster_tree1.gif").convert_alpha(),
-            pygame.image.load("src/Images/enemy/monster_tree2.gif").convert_alpha(),
+            pygame.image.load("src/Images/enemy/tree/monster_tree1.gif").convert_alpha(),
+            pygame.image.load("src/Images/enemy/tree/monster_tree2.gif").convert_alpha(),
 
         ]
         
@@ -814,7 +814,7 @@ class Bullet(pygame.sprite.Sprite):
         self.offset = offset
         self.owner = owner
         self.frames = [
-            pygame.image.load("src/Images/weapon/TheArrow.png").convert_alpha(),
+            pygame.image.load("src/Images/weapon/arrow/TheArrow.png").convert_alpha(),
            
         ]
         # simple rectangle to represent bullet

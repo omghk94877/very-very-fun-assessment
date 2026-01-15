@@ -4,7 +4,7 @@ import sprite
 import surfacekeeper
 
 class Main:
-    def __init__(self, size=(1000,600), screen=None):
+    def __init__(self, size=(1000,600), screen=None, level=1, game_state=None, app=None):
         if screen is None:
             pygame.init()
             self.screen = pygame.display.set_mode(size)
@@ -16,6 +16,10 @@ class Main:
         
         #D - Display configuration
         self.size = size
+        self.level = level
+        self.game_state = game_state
+        self.app = app
+        self.won = False
         #E - Entities
         self.entities()
         #A - Action (broken into ALTER steps)
@@ -95,8 +99,17 @@ class Main:
         # create boss and add to active sprites (boss is not added to `self.enemies`
         # so regular bullets/blades won't auto-delete it; we handle boss hits separately)
         # boss is added AFTER portal so it renders on top
-        self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=50)
-        self.all_sprites.add(self.boss)
+        if self.level == 1:
+            self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=50)
+            self.all_sprites.add(self.boss)
+        elif self.level == 2:
+            # Mini bosses for level 2
+            self.mini_boss1 = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=12)  # 1/4 health
+            self.mini_boss1.rect.centerx = self.background.world_width // 4
+            self.all_sprites.add(self.mini_boss1)
+            self.mini_boss2 = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=25)  # Giant bat placeholder
+            self.mini_boss2.rect.centerx = 3 * self.background.world_width // 4
+            self.all_sprites.add(self.mini_boss2)
 
         for i in range(5):
             spikes = sprite.Spike(self.background, player=self.player)
@@ -226,6 +239,8 @@ class Main:
                 if i.rect.colliderect(self.player.rect):
                     #trigger death and freeze game
                     self.player.death()
+                    if self.game_state:
+                        self.game_state.increment_death_count()
                     self.game_over = True
                     #self.keepGoing = False
             
@@ -258,14 +273,26 @@ class Main:
                     if spr.rect.colliderect(self.player.rect):
                         # player dies immediately on projectile hit
                         self.player.death()
+                        if self.game_state:
+                            self.game_state.increment_death_count()
                         self.game_over = True
                         return
                     
             if self.player.rect.colliderect(self.portal.rect):
-                #here to put the winning sreen
-                
-                self.game_over = True
-                self.keepGoing = False
+                if self.level == 1:
+                    if not self.game_state.level1_completed:
+                        self.game_state.level1_completed = True
+                        self.game_state.save()
+                        import surfacekeeper
+                        self.app.change_screen(surfacekeeper.VisualNovel(self.app, "level1_end"))
+                    else:
+                        import surfacekeeper
+                        self.app.change_screen(surfacekeeper.VisualNovel(self.app, "portal"))
+                elif self.level == 2:
+                    self.won = True
+                    self.game_state.save()
+                    self.game_over = True
+                    self.keepGoing = False
 
 
             """# blade cancels boss projectiles (blade destroys any boss fireball it touches)
@@ -280,6 +307,8 @@ class Main:
             for i in self.enemies:
                 if i.rect.colliderect(self.player.rect):
                     self.player.death()
+                    if self.game_state:
+                        self.game_state.increment_death_count()
                     self.game_over = True
 
 

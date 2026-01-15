@@ -1,5 +1,8 @@
 import pygame
 import make_save
+import os
+from json_loader import load_json
+import game_state
  
 class ScreenManager:
     """
@@ -108,6 +111,7 @@ class Button:
         """
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.rect.collidepoint(event.pos):
+                self.onclick()
                 if callable(self.onclick):
                     self.onclick()
 
@@ -138,12 +142,12 @@ class MainMenu(ScreenManager):
             self.rect.top = 0
             self.scroll_speed = 1
         
-        # 4 buttons: play, intro, load save, quit
+        # 5 buttons: play, intro, load save, visual novel, quit
         self.buttons = [
             Button((cx, top + 1*(btn_h+14), btn_w, btn_h), "Play", self.play_game, self.font),
             Button((cx, top + 2*(btn_h+14), btn_w, btn_h), "Introduction", self.show_intro, self.font),
             Button((cx, top + 3*(btn_h+14), btn_w, btn_h), "Load Save", self.load_save, self.font),
-            Button((cx, top + 4*(btn_h+14), btn_w, btn_h), "Quit", self.quit_game, self.font),
+            Button((cx, top + 5*(btn_h+14), btn_w, btn_h), "Quit", self.quit_game, self.font),
         ]
 
     def update(self):
@@ -184,14 +188,15 @@ class MainMenu(ScreenManager):
             b.draw(surface)
 
     def play_game(self):
-        # Start the actual game
-        self.app.start_game()
+        # Start name input
+        self.app.change_screen(NameInput(self.app))
 
     def show_intro(self):
         self.app.change_screen(ShowIntro(self.app))
 
     def load_save(self):
         self.app.change_screen(MakeSave(self.app))
+
     
     def quit_game(self):
         self.app.quit()
@@ -283,8 +288,9 @@ class MakeSave(ScreenManager, make_save.SaveSystem):
             elif event.key == pygame.K_RETURN and self.save_list[0] != "No saves available":
                 # Load the selected save
                 try:
-                    make_save.SaveSystem.load_game(self, self.save_list[self.selected_index])
-                    self.app.start_game()
+                    player_name = self.save_list[self.selected_index].replace('_save.json', '')
+                    if self.app.game_state.load(player_name):
+                        self.app.start_game(1)
                 except:
                     pass
 
@@ -296,11 +302,130 @@ class MakeSave(ScreenManager, make_save.SaveSystem):
         y_offset = 150
         for i, save in enumerate(self.save_list):
             color = (255, 255, 0) if i == self.selected_index else (255, 255, 255)
-            text = self.font.render(f"{'> ' if i == self.selected_index else '  '}{save}", True, color)
+            display_name = save.replace('_save.json', '') if save.endswith('_save.json') else save
+            text = self.font.render(f"{'> ' if i == self.selected_index else '  '}{display_name}", True, color)
             surface.blit(text, (100, y_offset + i * 40))
         
         instruction = self.font.render("UP/DOWN to select, ENTER to load, ESC to return", True, (200, 200, 200))
         surface.blit(instruction, (100, self.app.size[1] - 50))
+
+
+class VisualNovel(ScreenManager):
+    def __init__(self, app, story_part="intro"):
+        super().__init__(app)
+        self.font = pygame.font.SysFont(None, 24)
+        self.name_font = pygame.font.SysFont(None, 28)
+        self.story_part = story_part
+        self.story_file = f"stories/{story_part}.json"
+        self.story_data = load_json(self.story_file) or []
+        self.current_index = 0
+        self.background = None
+        self.load_current_background()
+        pygame.mixer.init()  # Ensure mixer is initialized
+
+    def load_current_background(self):
+        if self.story_data and self.current_index < len(self.story_data):
+            bg_path = os.path.join("src", "Images", self.story_data[self.current_index].get("background", ""))
+            try:
+                self.background = pygame.image.load(bg_path)
+                self.background = pygame.transform.scale(self.background, self.app.size)
+            except:
+                self.background = None
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                self.advance_story()
+            elif event.key == pygame.K_ESCAPE:
+                self.app.change_screen(MainMenu(self.app))
+
+    def advance_story(self):
+        if self.current_index < len(self.story_data) - 1:
+            # Play sound effect
+            sound_path = os.path.join("src", "Sounds", self.story_data[self.current_index].get("sound", ""))
+            try:
+                sound = pygame.mixer.Sound(sound_path)
+                sound.play()
+            except:
+                pass  # No sound or error
+            self.current_index += 1
+            self.load_current_background()
+        else:
+            # End of story, go to next
+            self.on_story_end()
+
+    def on_story_end(self):
+        if self.story_part == "intro":
+            self.app.start_game(1)
+        elif self.story_part == "level1_end":
+            self.app.start_game(1)
+        elif self.story_part == "portal":
+            self.app.start_game(2)
+        else:
+            self.app.change_screen(MainMenu(self.app))
+
+    def draw(self, surface):
+        surface.fill((0, 0, 0))  # Black background if no image
+        if self.background:
+            surface.blit(self.background, (0, 0))
+
+        if self.story_data and self.current_index < len(self.story_data):
+            data = self.story_data[self.current_index]
+            name = data.get("name", "")
+            line = data.get("line", "")
+
+            # Draw name
+            name_text = self.name_font.render(name, True, (255, 255, 255))
+            surface.blit(name_text, (50, self.app.size[1] - 150))
+
+            # Draw line
+            line_text = self.font.render(line, True, (255, 255, 255))
+            surface.blit(line_text, (50, self.app.size[1] - 100))
+
+            # Instruction
+            instr = self.font.render("Press SPACE or ENTER to continue, ESC to menu", True, (200, 200, 200))
+            surface.blit(instr, (50, self.app.size[1] - 50))
+
+
+class NameInput(ScreenManager):
+    def __init__(self, app):
+        super().__init__(app)
+        self.font = pygame.font.SysFont(None, 36)
+        self.input_font = pygame.font.SysFont(None, 48)
+        self.prompt = "Enter your name:"
+        self.name = ""
+        self.cursor_visible = True
+        self.cursor_timer = 0
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN and self.name.strip():
+                self.app.game_state.new_game(self.name.strip())
+                self.app.change_screen(VisualNovel(self.app, "intro"))
+            elif event.key == pygame.K_BACKSPACE:
+                self.name = self.name[:-1]
+            elif event.key == pygame.K_ESCAPE:
+                self.app.change_screen(MainMenu(self.app))
+            else:
+                if len(self.name) < 20 and event.unicode.isprintable():
+                    self.name += event.unicode
+
+    def update(self):
+        self.cursor_timer += 1
+        if self.cursor_timer >= 30:
+            self.cursor_visible = not self.cursor_visible
+            self.cursor_timer = 0
+
+    def draw(self, surface):
+        surface.fill((18, 20, 28))
+        prompt_text = self.font.render(self.prompt, True, (255, 220, 60))
+        surface.blit(prompt_text, prompt_text.get_rect(center=(self.app.size[0]//2, self.app.size[1]//2 - 50)))
+        
+        name_text = self.input_font.render(self.name + ("|" if self.cursor_visible else ""), True, (255, 255, 255))
+        surface.blit(name_text, name_text.get_rect(center=(self.app.size[0]//2, self.app.size[1]//2 + 20)))
+        
+        instr = self.font.render("Press ENTER to confirm, ESC to cancel", True, (200, 200, 200))
+        surface.blit(instr, instr.get_rect(center=(self.app.size[0]//2, self.app.size[1] - 50)))
 
 
 class MakeWhiteScreem(ScreenManager):
@@ -336,6 +461,7 @@ class App:
         self.running = True
         self.current_screen = None
         self.game_instance = None
+        self.game_state = game_state.GameState()
         
         # Start with main menu
         self.change_screen(MainMenu(self))
@@ -349,13 +475,18 @@ class App:
         if hasattr(self.current_screen, "on_enter"):
             self.current_screen.on_enter()
     
-    def start_game(self):
+    def start_game(self, level=1):
         """Start the actual game"""
         # Import here to avoid circular imports
         import main
-        self.game_instance = main.Main(size=self.size)
-        # After game ends, return to main menu
-        self.change_screen(MainMenu(self))
+        self.game_instance = main.Main(size=self.size, level=level, game_state=self.game_state, app=self)
+        # After game ends, return to main menu or next story
+        if level == 1 and self.game_instance.won:
+            self.change_screen(VisualNovel(self.app, "level1_end"))
+        elif level == 2:
+            self.change_screen(MakeWhiteScreem(self.app))  # Black screen
+        else:
+            self.change_screen(MainMenu(self))
     
     def quit(self):
         """Quit the application"""
