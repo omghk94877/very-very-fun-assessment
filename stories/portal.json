@@ -1,13 +1,31 @@
 [
     {
-        "name": "Narrator",
-        "line": "You approach the ancient portal. A new challenge awaits.",
+        "name": "Hero",
+        "line": "why do they set the portal close to where they are?",
         "sound": "portal_approach.wav",
         "background": "portal_bg.png"
     },
     {
+        "name": "Freyr",
+        "line": "because they are immortal, but they can still be dead just that their power will decrease by 3/4 , but the longer they are alive, the more power they got, so you might face the croc again….",
+        "sound": "hero_resolve.wav",
+        "background": "portal_bg.png"
+    },
+    {
+        "name": "Freyr",
+        "line": "and remember, don't trust the monsters, they are all lying to you, they just want the $&×*;$<×& and then they will destroy the whole planet afterward",
+        "sound": "hero_resolve.wav",
+        "background": "portal_bg.png"
+    },
+    {
         "name": "Hero",
-        "line": "I must face the greater evil now.",
+        "line": "*hold tighter the sword…*",
+        "sound": "hero_resolve.wav",
+        "background": "portal_bg.png"
+    },
+    {
+        "name": "Hero",
+        "line": "I will destroy the stone and kill every monster there are…",
         "sound": "hero_resolve.wav",
         "background": "portal_bg.png"
     }

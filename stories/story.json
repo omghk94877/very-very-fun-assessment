@@ -7,7 +7,7 @@
     },
     {
         "name": "Hero",
-        "line": "I must defeat the monsters and save the world!",
+        "line": "I, USER_NAME, must defeat the monsters and save the world!",
         "sound": "hero_speak.wav",
         "background": "vn_bg2.png"
     },
