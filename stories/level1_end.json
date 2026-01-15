@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Narrator",
+        "line": "Level 1 completed! You have proven your worth.",
+        "sound": "level_complete.wav",
+        "background": "level1_end_bg.png"
+    },
+    {
+        "name": "Hero",
+        "line": "But the journey continues...",
+        "sound": "hero_continue.wav",
+        "background": "level1_end_bg.png"
+    }
+]

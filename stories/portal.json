@@ -1,0 +1,14 @@
+[
+    {
+        "name": "Narrator",
+        "line": "You approach the ancient portal. A new challenge awaits.",
+        "sound": "portal_approach.wav",
+        "background": "portal_bg.png"
+    },
+    {
+        "name": "Hero",
+        "line": "I must face the greater evil now.",
+        "sound": "hero_resolve.wav",
+        "background": "portal_bg.png"
+    }
+]

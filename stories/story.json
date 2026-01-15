@@ -1,0 +1,20 @@
+[
+    {
+        "name": "Narrator",
+        "line": "Welcome to Monster Smash: The Visual Novel Adventure!",
+        "sound": "intro.wav",
+        "background": "vn_bg1.png"
+    },
+    {
+        "name": "Hero",
+        "line": "I must defeat the monsters and save the world!",
+        "sound": "hero_speak.wav",
+        "background": "vn_bg2.png"
+    },
+    {
+        "name": "Villain",
+        "line": "You will never succeed!",
+        "sound": "villain_laugh.wav",
+        "background": "vn_bg3.png"
+    }
+]
