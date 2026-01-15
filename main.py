@@ -235,7 +235,7 @@ class Main:
 
     def check_collision(self):
             #collision handling only (drawing done by caller)
-            for i in self.obstacles:
+            """for i in self.obstacles:
                 if i.rect.colliderect(self.player.rect):
                     #trigger death and freeze game
                     self.player.death()
@@ -276,7 +276,7 @@ class Main:
                         if self.game_state:
                             self.game_state.increment_death_count()
                         self.game_over = True
-                        return
+                        return"""
                     
             if self.player.rect.colliderect(self.portal.rect):
                 if self.level == 1:
@@ -304,12 +304,12 @@ class Main:
                                 proj.kill()"""
                                 
             #check for enemy and player
-            for i in self.enemies:
+            """for i in self.enemies:
                 if i.rect.colliderect(self.player.rect):
                     self.player.death()
                     if self.game_state:
                         self.game_state.increment_death_count()
-                    self.game_over = True
+                    self.game_over = True"""
 
 
 
