@@ -495,7 +495,7 @@ class App:
     def run(self):
         """Main application loop"""
         while self.running:
-            dt = self.clock.tick(30)
+            dt = self.clock.tick(120)
             
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
