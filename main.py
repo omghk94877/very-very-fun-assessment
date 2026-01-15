@@ -170,12 +170,13 @@ class Main:
                         elif event.key == pygame.K_SPACE:
                             self.intro.next_line()
                         elif event.key == pygame.K_c:
-                            #toggle equipped weapon between flame and obsidian
-                            if getattr(self, 'weapon', 'flame') == 'flame':
-                                self.weapon = 'obsidian'
-                            else:
-                                self.weapon = 'flame'
-                            self.player.weapon = self.weapon
+                            #toggle equipped weapon between flame and obsidian if unlocked
+                            if self.game_state.obsidian_unlocked:
+                                if getattr(self, 'weapon', 'flame') == 'flame':
+                                    self.weapon = 'obsidian'
+                                else:
+                                    self.weapon = 'flame'
+                                self.player.weapon = self.weapon
                 elif event.type == pygame.KEYUP and not self.game_over:
                     #when releasing movement keys, return to standing image
                     if event.key in (pygame.K_a, pygame.K_d, pygame.K_w):
@@ -235,12 +236,13 @@ class Main:
 
     def check_collision(self):
             #collision handling only (drawing done by caller)
-            """for i in self.obstacles:
+            for i in self.obstacles:
                 if i.rect.colliderect(self.player.rect):
                     #trigger death and freeze game
                     self.player.death()
                     if self.game_state:
                         self.game_state.increment_death_count()
+                        self.game_state.save()
                     self.game_over = True
                     #self.keepGoing = False
             
@@ -250,23 +252,31 @@ class Main:
                     hit_enemies = pygame.sprite.spritecollide(spr, self.enemies, True)
                     if hit_enemies:
                         spr.kill()
+                        # Unlock obsidian after first enemy kill
+                        if not self.game_state.obsidian_unlocked:
+                            self.game_state.obsidian_unlocked = True
+                            self.game_state.save()
                     # bullet hitting boss: boss takes one hit (50 required to die)
                     if getattr(self, 'boss', None) is not None and spr.rect.colliderect(self.boss.rect):
                         # count a hit and remove bullet
                         self.boss.take_hit()
                         spr.kill()
- 
+     
             #Check collisions between blades and enemies: blades kill enemies on contact
             for blade in list(self.all_sprites.sprites()):
                 if isinstance(blade, (sprite.Blade, sprite.Other_blade)):
                     hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, True)
                     if hit_enemies:
+                        # Unlock obsidian after first enemy kill
+                        if not self.game_state.obsidian_unlocked:
+                            self.game_state.obsidian_unlocked = True
+                            self.game_state.save()
                         # optionally keep blade alive until its timer; do not need to call blade.kill() here
                         pass
                     # blade hitting boss
                     if getattr(self, 'boss', None) is not None and blade.rect.colliderect(self.boss.rect):
                         self.boss.take_hit()
- 
+     
             # projectiles from boss kill player on contact
             for spr in list(self.all_sprites.sprites()):
                 if isinstance(spr, (sprite.BigFireball, sprite.SmallFireball, sprite.TracingFireball, sprite.BossBullet)):
@@ -275,8 +285,9 @@ class Main:
                         self.player.death()
                         if self.game_state:
                             self.game_state.increment_death_count()
+                            self.game_state.save()
                         self.game_over = True
-                        return"""
+                        return
                     
             if self.player.rect.colliderect(self.portal.rect):
                 if self.level == 1:
@@ -295,21 +306,22 @@ class Main:
                     self.keepGoing = False
 
 
-            """# blade cancels boss projectiles (blade destroys any boss fireball it touches)
+            # blade cancels boss projectiles (blade destroys any boss fireball it touches)
             for blade in list(self.all_sprites.sprites()):
                 if isinstance(blade, (sprite.Blade, sprite.Other_blade)):
                     for proj in list(self.all_sprites.sprites()):
                         if isinstance(proj, (sprite.BigFireball, sprite.SmallFireball, sprite.TracingFireball, sprite.BossBullet)):
                             if blade.rect.colliderect(proj.rect):
-                                proj.kill()"""
+                                proj.kill()
                                 
             #check for enemy and player
-            """for i in self.enemies:
+            for i in self.enemies:
                 if i.rect.colliderect(self.player.rect):
                     self.player.death()
                     if self.game_state:
                         self.game_state.increment_death_count()
-                    self.game_over = True"""
+                        self.game_state.save()
+                    self.game_over = True
 
 
 
