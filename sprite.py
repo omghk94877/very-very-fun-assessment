@@ -267,17 +267,26 @@ class Enemy(pygame.sprite.Sprite):
             pygame.image.load("src/Images/enemy/bat/monster_bat1.gif").convert_alpha(),
             pygame.image.load("src/Images/enemy/bat/monster_bat2.gif").convert_alpha(),
         ]
+
+        self.frames_tree = [
+            pygame.image.load("src/Images/enemy/monster_tree1.gif").convert_alpha(),
+            pygame.image.load("src/Images/enemy/monster_tree2.gif").convert_alpha(),
+
+        ]
         
 
-        # Only regular enemy types (0=root, 1=bat)
-        self.enemy_type = random.randint(0, 1)
+        # Only regular enemy types (0=root, 1=bat, 2=tree)
+        self.enemy_type = random.randint(0, 2)
 
         if self.enemy_type == 0:
             self.frames = self.frames_root
             self.size = (60, 60)
-        else:
+        elif self.enemy_type == 1:
             self.frames = self.frames_bat
             self.size = (30, 30)
+        elif self.enemy_type == 2:
+            self.frames = self.frames_tree
+            self.size = (80, 80)
 
         # no HP — enemies die on first hit (bullets/blades kill immediately)
 
@@ -366,7 +375,7 @@ class Enemy(pygame.sprite.Sprite):
             pass
 
         # boss firing behavior (boss stationary but fires when player in range)
-        if self.enemy_type == 2:
+        """if self.enemy_type == 2:
             # ensure attributes exist (defensive)
             if not hasattr(self, 'fire_timer'):
                 self.fire_timer = 0
@@ -386,7 +395,7 @@ class Enemy(pygame.sprite.Sprite):
                         self.all_sprites.add(proj)
                     self.fire_timer = 0
             except Exception:
-                pass
+                pass"""
 
         # no health bar logic (enemies are removed on hit)
         # update onscreen rect from world coords (existing)
@@ -501,7 +510,7 @@ class Boss(pygame.sprite.Sprite):
 
 class BigFireball(pygame.sprite.Sprite):
     """Slow, large red fireball."""
-    def __init__(self, owner, speed=80):
+    def __init__(self, owner, speed=100):
         super().__init__()
         self.owner = owner
         self.frames = [
@@ -627,7 +636,7 @@ class SmallFireball(pygame.sprite.Sprite):
 
 class TracingFireball(pygame.sprite.Sprite):
     """Slow yellow homing fireball that tracks player for ~3s."""
-    def __init__(self, owner, speed=120):
+    def __init__(self, owner, speed=150):
         super().__init__()
         self.owner = owner
         self.frames = [
