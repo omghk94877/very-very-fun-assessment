@@ -371,8 +371,8 @@ class VisualNovel(ScreenManager):
 
         if self.story_data and self.current_index < len(self.story_data):
             data = self.story_data[self.current_index]
-            name = data.get("name", "")
-            line = data.get("line", "")
+            name = data.get("name", "").replace("USER_NAME", self.app.game_state.player_name)
+            line = data.get("line", "").replace("USER_NAME", self.app.game_state.player_name)
 
             # Draw name
             name_text = self.name_font.render(name, True, (255, 255, 255))
