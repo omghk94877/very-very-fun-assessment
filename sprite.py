@@ -215,6 +215,7 @@ class Background(pygame.sprite.Sprite):
         self.at_left_edge = False
         self.at_right_edge = False
 
+
     def player_move_left(self):
         """
         if player move left, background move right
@@ -266,17 +267,26 @@ class Enemy(pygame.sprite.Sprite):
             pygame.image.load("src/Images/enemy/bat/monster_bat1.gif").convert_alpha(),
             pygame.image.load("src/Images/enemy/bat/monster_bat2.gif").convert_alpha(),
         ]
+
+        self.frames_tree = [
+            pygame.image.load("src/Images/enemy/monster_tree1.gif").convert_alpha(),
+            pygame.image.load("src/Images/enemy/monster_tree2.gif").convert_alpha(),
+
+        ]
         
 
-        # Only regular enemy types (0=root, 1=bat)
-        self.enemy_type = random.randint(0, 1)
+        # Only regular enemy types (0=root, 1=bat, 2=tree)
+        self.enemy_type = random.randint(0, 2)
 
         if self.enemy_type == 0:
             self.frames = self.frames_root
             self.size = (60, 60)
-        else:
+        elif self.enemy_type == 1:
             self.frames = self.frames_bat
             self.size = (30, 30)
+        elif self.enemy_type == 2:
+            self.frames = self.frames_tree
+            self.size = (80, 80)
 
         # no HP — enemies die on first hit (bullets/blades kill immediately)
 
@@ -365,7 +375,7 @@ class Enemy(pygame.sprite.Sprite):
             pass
 
         # boss firing behavior (boss stationary but fires when player in range)
-        if self.enemy_type == 2:
+        """if self.enemy_type == 2:
             # ensure attributes exist (defensive)
             if not hasattr(self, 'fire_timer'):
                 self.fire_timer = 0
@@ -385,7 +395,7 @@ class Enemy(pygame.sprite.Sprite):
                         self.all_sprites.add(proj)
                     self.fire_timer = 0
             except Exception:
-                pass
+                pass"""
 
         # no health bar logic (enemies are removed on hit)
         # update onscreen rect from world coords (existing)
@@ -500,13 +510,21 @@ class Boss(pygame.sprite.Sprite):
 
 class BigFireball(pygame.sprite.Sprite):
     """Slow, large red fireball."""
-    def __init__(self, owner, speed=80):
+    def __init__(self, owner, speed=100):
         super().__init__()
         self.owner = owner
-        size = 48
-        self.image = pygame.Surface((size, size), pygame.SRCALPHA)
-        pygame.draw.circle(self.image, (200, 40, 20), (size//2, size//2), size//2)
+        self.frames = [
+            pygame.image.load("src/Images/weapon/fireball/firebal_0.gif"),
+            pygame.image.load("src/Images/weapon/fireball/firebal_1.gif"),
+            pygame.image.load("src/Images/weapon/fireball/firebal_2.gif"),
+        ]
+        # Scale frames to large size (big fireball)
+        self.frames = [pygame.transform.scale(img, (80, 80)) for img in self.frames]
+        self.image = self.frames[0]
         self.rect = self.image.get_rect()
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.frame_duration = 100
         # spawn just outside boss facing player (compute world coords)
         try:
             player_world_x = self.owner.player.rect.x - self.owner.background.rect.x
@@ -539,6 +557,16 @@ class BigFireball(pygame.sprite.Sprite):
         self.rect.x = int(self.world_x + self.owner.background.rect.x)
         self.rect.y = int(self.world_y + self.owner.background.rect.y)
         self.timer += dt
+        
+        # animate frames
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_duration:
+            self.frame_timer = 0
+            self.frame_index += 1
+            if self.frame_index >= len(self.frames):
+                self.frame_index = 0
+            self.image = self.frames[self.frame_index]
+        
         if self.timer >= self.count_time:
             self.kill()
 
@@ -549,8 +577,12 @@ class SmallFireball(pygame.sprite.Sprite):
         super().__init__()
         self.owner = owner
         size = 20
-        self.image = pygame.Surface((size, size), pygame.SRCALPHA)
-        pygame.draw.circle(self.image, (80, 160, 255), (size//2, size//2), size//2)
+        self.frames = [
+            pygame.image.load("src/Images/weapon/fireball/firebal_0.gif"),
+            pygame.image.load("src/Images/weapon/fireball/firebal_1.gif"),
+            pygame.image.load("src/Images/weapon/fireball/firebal_2.gif"),
+        ]
+        self.image = self.frames[0]
         self.rect = self.image.get_rect()
         try:
             player_world_x = self.owner.player.rect.x - self.owner.background.rect.x
@@ -575,24 +607,50 @@ class SmallFireball(pygame.sprite.Sprite):
         self.count_time = 10000
         self.kind = 'small'
 
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.frame_duration = 100 
+
+        self.timer = 0
+        # Bullet lasts for 2 seconds
+        self.count_time = 2000
+
     def update(self, dt):
         self.world_x += self.vx * dt
         self.rect.x = int(self.world_x + self.owner.background.rect.x)
         self.rect.y = int(self.world_y + self.owner.background.rect.y)
         self.timer += dt
+
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_duration:
+            self.frame_timer = 0
+            self.frame_index += 1
+
+            if self.frame_index >= len(self.frames):
+                self.frame_index = 0
+
+            self.image = self.frames[self.frame_index]
         if self.timer >= self.count_time:
             self.kill()
 
 
 class TracingFireball(pygame.sprite.Sprite):
     """Slow yellow homing fireball that tracks player for ~3s."""
-    def __init__(self, owner, speed=120):
+    def __init__(self, owner, speed=150):
         super().__init__()
         self.owner = owner
-        size = 28
-        self.image = pygame.Surface((size, size), pygame.SRCALPHA)
-        pygame.draw.circle(self.image, (240, 220, 60), (size//2, size//2), size//2)
+        self.frames = [
+            pygame.image.load("src/Images/weapon/fireball/firebal_0.gif"),
+            pygame.image.load("src/Images/weapon/fireball/firebal_1.gif"),
+            pygame.image.load("src/Images/weapon/fireball/firebal_2.gif"),
+        ]
+        # Scale frames to medium size (tracing fireball)
+        self.frames = [pygame.transform.scale(img, (50, 50)) for img in self.frames]
+        self.image = self.frames[0]
         self.rect = self.image.get_rect()
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.frame_duration = 100
         # spawn toward player's side (screen coords -> world coords)
         try:
             player_world_x = self.owner.player.rect.x - self.owner.background.rect.x
@@ -635,6 +693,15 @@ class TracingFireball(pygame.sprite.Sprite):
             self._pos.x += self.speed * dt
             self.world_x = float(self._pos.x)
             self.rect.x = int(self.world_x + self.owner.background.rect.x)
+
+        # animate frames
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_duration:
+            self.frame_timer = 0
+            self.frame_index += 1
+            if self.frame_index >= len(self.frames):
+                self.frame_index = 0
+            self.image = self.frames[self.frame_index]
 
         self.timer += dt
         if self.timer >= self.count_time:
@@ -747,9 +814,8 @@ class Bullet(pygame.sprite.Sprite):
         self.offset = offset
         self.owner = owner
         self.frames = [
-            pygame.image.load("src/Images/weapon/fireball/firebal_0.gif").convert_alpha(),
-            pygame.image.load("src/Images/weapon/fireball/firebal_1.gif").convert_alpha(),
-            pygame.image.load("src/Images/weapon/fireball/firebal_2.gif").convert_alpha(),
+            pygame.image.load("src/Images/weapon/TheArrow.png").convert_alpha(),
+           
         ]
         # simple rectangle to represent bullet
         self.image = pygame.Surface((10, 5))
@@ -757,7 +823,7 @@ class Bullet(pygame.sprite.Sprite):
 
         #transforming the images to correct size
         self.frames = [
-            pygame.transform.scale(img, (35, 35)) for img in self.frames
+            pygame.transform.scale(img, (60, 35)) for img in self.frames
         ]
         #transforming the images to correct rotation
         self.frames = [
@@ -771,14 +837,14 @@ class Bullet(pygame.sprite.Sprite):
 
         # adjust frames for facing direction before picking initial image
         facing = getattr(self.owner, 'facing', 'right')
-        if facing == 'left':
+        if facing == 'right':
             # rotate by 180 to flip the -90 rotated frames to face left
             self.frames = [pygame.transform.rotate(img, 180) for img in self.frames]
 
         # pick current image after any rotation so sizes are correct
         self.image = self.frames[self.frame_index]
 
-        if facing == 'right':
+        if facing == 'left':
             x = self.owner.rect.right + 5 + self.offset[0]
         else:
             x = self.owner.rect.left - self.image.get_width() - 5 + self.offset[0]
@@ -820,15 +886,6 @@ class Bullet(pygame.sprite.Sprite):
 
         self.timer += dt
 
-        if self.frame_timer >= self.frame_duration:
-            self.frame_timer = 0
-            self.frame_index += 1
-
-            if self.frame_index >= len(self.frames):
-                self.frame_index = 0
-
-            self.image = self.frames[self.frame_index]
-
         if self.timer >= self.count_time:
             self.kill()
 
@@ -838,12 +895,18 @@ class BossBullet(pygame.sprite.Sprite):
     def __init__(self, owner, speed=220):
         super().__init__()
         self.owner = owner
-        # create a larger projectile surface for boss
-        size = 44
-        radius = size // 2
-        self.image = pygame.Surface((size, size), pygame.SRCALPHA)
-        pygame.draw.circle(self.image, (255, 120, 0), (radius, radius), radius)
+        self.frames = [
+            pygame.image.load("src/Images/weapon/fireball/firebal_0.gif"),
+            pygame.image.load("src/Images/weapon/fireball/firebal_1.gif"),
+            pygame.image.load("src/Images/weapon/fireball/firebal_2.gif"),
+        ]
+        # Scale frames to large size for boss bullet
+        self.frames = [pygame.transform.scale(img, (60, 60)) for img in self.frames]
+        self.image = self.frames[0]
         self.rect = self.image.get_rect()
+        self.frame_index = 0
+        self.frame_timer = 0
+        self.frame_duration = 100
         # spawn just outside the boss facing the player (compute world coords)
         try:
             player_world_x = self.owner.player.rect.x - self.owner.background.rect.x
@@ -876,6 +939,16 @@ class BossBullet(pygame.sprite.Sprite):
         self.rect.x = int(self.world_x + self.owner.background.rect.x)
         self.rect.y = int(self.world_y + self.owner.background.rect.y)
         self.timer += dt
+        
+        # animate frames
+        self.frame_timer += dt
+        if self.frame_timer >= self.frame_duration:
+            self.frame_timer = 0
+            self.frame_index += 1
+            if self.frame_index >= len(self.frames):
+                self.frame_index = 0
+            self.image = self.frames[self.frame_index]
+        
         if self.timer >= self.count_time:
             self.kill()
 
