@@ -47,10 +47,8 @@ class SaveSystem:
             save_path = self.get_save_path(player_name)
             dump_json(save_data, save_path)
             
-            print(f"Game saved successfully for {player_name}")
             return True
         except Exception as e:
-            print(f"Error saving game: {e}")
             return False
     
     def load_game(self, player_name):
@@ -68,15 +66,12 @@ class SaveSystem:
             save_path = self.get_save_path(player_name)
             
             if not os.path.exists(save_path):
-                print(f"No save file found for {player_name}")
                 return None
             
             save_data = load_json(save_path)
             
-            print(f"Game loaded successfully for {player_name}")
             return save_data
         except Exception as e:
-            print(f"Error loading game: {e}")
             return None
     
     def list_saves(self):
@@ -96,10 +91,9 @@ class SaveSystem:
                             data = load_json(filepath)
                             saves.append(data)
                         except Exception as e:
-                            print(f"Error reading {filename}: {e}")
+                            None
         except Exception as e:
-            print(f"Error listing saves: {e}")
-        
+            None
         return saves
     
     def delete_save(self, player_name):
@@ -116,13 +110,10 @@ class SaveSystem:
             save_path = self.get_save_path(player_name)
             if os.path.exists(save_path):
                 os.remove(save_path)
-                print(f"Save file deleted for {player_name}")
                 return True
             else:
-                print(f"No save file found for {player_name}")
                 return False
         except Exception as e:
-            print(f"Error deleting save: {e}")
             return False
     
     def save_exists(self, player_name):
