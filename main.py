@@ -30,6 +30,10 @@ class Main:
         # respawn timer (ms). When game_over becomes True this is set and counts down.
         self.respawn_timer = None
         self.respawn_delay = 2000  # ms to wait before respawn
+        # Pause state
+        self.paused = False
+        # Font for UI
+        self.font = pygame.font.SysFont(None, 36)
         #L - Loop
         self.loop()
         #Close the game window if we own it
@@ -79,8 +83,13 @@ class Main:
 
         #obstacles live in world coordinates (move with background)
         self.obstacles = pygame.sprite.Group()
+        portal_x = 8530  # Portal position
+        safe_portal_distance = 300  # No obstacles within this distance of portal
         for i in range(16):
             rock = sprite.Rock(self.background, player=self.player)
+            # Ensure rock is not near portal
+            while abs(rock.world_x - portal_x) < safe_portal_distance:
+                rock = sprite.Rock(self.background, player=self.player)
             self.obstacles.add(rock)
             self.all_sprites.add(rock)
 
@@ -113,6 +122,9 @@ class Main:
 
         for i in range(5):
             spikes = sprite.Spike(self.background, player=self.player)
+            # Ensure spikes are not near portal
+            while abs(spikes.world_x - portal_x) < safe_portal_distance:
+                spikes = sprite.Spike(self.background, player=self.player)
             self.obstacles.add(spikes)
             self.all_sprites.add(spikes)
 
@@ -137,7 +149,16 @@ class Main:
                     #Escape always quits; other controls disabled after death
                     if event.key == pygame.K_ESCAPE:
                         self.keepGoing = False
-                    elif not self.game_over:
+                    elif event.key == pygame.K_p:
+                        self.paused = not self.paused
+                    elif self.paused:
+                        if event.key == pygame.K_r:
+                            self.paused = False
+                        elif event.key == pygame.K_q:
+                            if self.game_state:
+                                self.game_state.save()
+                            self.keepGoing = False
+                    elif not self.game_over and not self.paused:
                         #WASD controls: A/D/W movement, S stop/init_move
                         if event.key == pygame.K_a:
                             self.player.move_left()
@@ -177,7 +198,7 @@ class Main:
                                 else:
                                     self.weapon = 'flame'
                                 self.player.weapon = self.weapon
-                elif event.type == pygame.KEYUP and not self.game_over:
+                elif event.type == pygame.KEYUP and not self.game_over and not self.paused:
                     #when releasing movement keys, return to standing image
                     if event.key in (pygame.K_a, pygame.K_d, pygame.K_w):
                         self.player.init_move()
@@ -187,13 +208,13 @@ class Main:
     def handle_input(self, dt):
             #continuous input handling (handles holding keys, including in-air horizontal control)
             keys = pygame.key.get_pressed()
-            if not self.game_over and keys[pygame.K_a]:
+            if not self.game_over and not self.paused and keys[pygame.K_a]:
                 #always allow the player to attempt a left move (move_left handles on_ground behavior)
                 self.player.move_left()
                 #scroll background (background moves, player stays put)
                 if not self.background.at_left_edge:
                     self.background.player_move_left()
-            elif not self.game_over and keys[pygame.K_d]:
+            elif not self.game_over and not self.paused and keys[pygame.K_d]:
                 self.player.move_right()
                 if not self.background.at_right_edge:
                     self.background.player_move_right()
@@ -203,11 +224,11 @@ class Main:
                 self.background.stop()
 
             #update sprites depending on game state
-            if not self.game_over:
+            if not self.game_over and not self.paused:
                 #normal gameplay: update everything and check collisions
                 self.all_sprites.update(dt)
                 self.check_collision()
-            else:
+            elif self.game_over:
                 #freeze everything except allow the player's death animation to advance
                 #stop background so world does not move
                 self.background.stop()
@@ -226,10 +247,34 @@ class Main:
                         self.entities()
                         self.game_over = False
                         self.respawn_timer = None
-                #still draw below
+            else:  # paused
+                # freeze everything, just stop background
+                self.background.stop()
+                self.background.update(0)
             #R - Refresh the display (draw current sprite states)
             #draw all sprites (order is insertion order)
             self.all_sprites.draw(self.screen)
+
+            # Draw death count
+            if self.game_state:
+                # skull image
+                skull_text = "X " + str(self.game_state.death_count)
+                death_surf = self.font.render(skull_text, True, (255, 255, 255))
+                self.screen.blit(death_surf, (10, 10))
+
+            # Draw pause menu
+            if self.paused:
+                # Semi-transparent overlay
+                overlay = pygame.Surface(self.size, pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, 128))
+                self.screen.blit(overlay, (0, 0))
+                # Menu text
+                resume_text = self.font.render("Resume (R)", True, (255, 255, 255))
+                quit_text = self.font.render("Quit (Q)", True, (255, 255, 255))
+                menu_title = self.font.render("Paused", True, (255, 255, 255))
+                self.screen.blit(menu_title, (self.size[0]//2 - menu_title.get_width()//2, self.size[1]//2 - 100))
+                self.screen.blit(resume_text, (self.size[0]//2 - resume_text.get_width()//2, self.size[1]//2 - 20))
+                self.screen.blit(quit_text, (self.size[0]//2 - quit_text.get_width()//2, self.size[1]//2 + 20))
 
             pygame.display.flip()
             
