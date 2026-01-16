@@ -805,6 +805,37 @@ class Blade(pygame.sprite.Sprite):
         if self.timer >= self.count_time:
             self.kill()
 
+class Blade(pygame.sprite.Sprite):
+    def __init__(self, owner, time=300, offset=(0,0)):
+        """Create a short-lived blade that appears outside the player and then disappears.
+        The blade does not move after being spawned; it simply exists for `time` ms.
+        """
+        super().__init__()
+        self.owner = owner
+        self.offset = offset
+        # thin rectangle to look like a blade
+        self.image = pygame.image.load("src/Images/weapon/sword/basic/basic_sword.png")
+        self.image = pygame.transform.rotate(self.image, -90)
+        self.image = pygame.transform.scale(self.image, (100, 35))
+        facing = getattr(self.owner, 'facing', 'right')
+        if facing == 'right':
+            x = self.owner.rect.right + 5 + self.offset[0]
+        elif facing == "left":
+            self.image = pygame.transform.rotate(self.image, 180)
+            x = self.owner.rect.left - self.image.get_width() - 5 + self.offset[0]
+        y = self.owner.rect.centery - (self.image.get_height() // 2) + self.offset[1]
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+        self.timer = 0
+        self.count_time = 300
+        # normal blade damage (higher than bullet)
+        self.damage = 40
+
+    def update(self, dt):
+        """Advance lifetime; blade does not move after spawning."""
+        self.timer += dt
+        if self.timer >= self.count_time:
+            self.kill()
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, owner, speed=100, offset=(0,0)):
