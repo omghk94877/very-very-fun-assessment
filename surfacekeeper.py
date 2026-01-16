@@ -209,11 +209,12 @@ class ShowIntro(ScreenManager):
         self.intro_index = 0
 
         paths = [
-            "src/Images/intro/intro_1.jpg",
-            "src/Images/intro/intro_2.jpg",
-            "src/Images/intro/intro_3.jpg",
-            "src/Images/intro/intro_4.jpg",
-            "src/Images/intro/intro_5.jpg"
+            "src/Images/intro/intro-1.png",
+            "src/Images/intro/intro-2.png",
+            "src/Images/intro/intro-3.png",
+            "src/Images/intro/intro-4.png",
+            "src/Images/intro/intro-5.png",
+            "src/Images/intro/intro-6.png"
         ]
 
         self.intro_images = []
