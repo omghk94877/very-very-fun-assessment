@@ -1,0 +1,32 @@
+[
+    {
+        "name": "Freyr",
+        "line": "you are finally awake, you have been slept for 500 year, our world ### has been conquered by monsters.",
+        "sound": "intro.wav",
+        "background": "vn_bg1.png"
+    },
+    {
+        "name": "USER_NAME",
+        "line": "what is the name of our world again?",
+        "sound": "hero_speak.wav",
+        "background": "vn_bg2.png"
+    },
+    {
+        "name": "USER_NAME",
+        "line": "It doesn't matter for now, brave USER_NAME now is your duty to save us from the devil monster ",
+        "sound": "villain_laugh.wav",
+        "background": "vn_bg3.png"
+    },
+    {
+        "name": "USER_NAME",
+        "line": " wait what?????",
+        "sound": "hero_determined.wav",
+        "background": "vn_bg4.png"
+    },
+    {
+        "name": "USER_NAME",
+        "line": "oh no !!seem like here is the world, wait why there is a monster coming towards me",
+        "sound": "hero_determined.wav",
+        "background": "vn_bg4.png"
+    }
+]
