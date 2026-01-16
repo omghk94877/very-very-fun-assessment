@@ -368,7 +368,8 @@ class Enemy(pygame.sprite.Sprite):
                 if abs(dx) <= self.chase_radius and abs(dx) > 2:
                     direction = 5 if dx > 0 else -5
                     self.world_x += direction * self.speed * dt
-                    if abs(dy) <= self.chase_radius and abs(dy) > 2:
+                    # Only bats (type 1) can move vertically; roots (type 0) stay grounded
+                    if self.enemy_type == 1 and abs(dy) <= self.chase_radius and abs(dy) > 2:
                         direction = 5 if dy > 0 else -5
                         self.world_y += direction * self.speed * dt
         except Exception:
@@ -1257,3 +1258,207 @@ class Portal(pygame.sprite.Sprite):
         # ensure rect follows background offset
         self.rect.x = int(self.world_x + self.background.rect.x)
         self.rect.y = self.world_y
+
+
+class Bush(pygame.sprite.Sprite):
+    """Bush obstacle - harmless decoration, works like Rock"""
+    def __init__(self, background, size=(80, 80), player=None, safe_distance=200):
+        super().__init__()
+        self.background = background
+
+        # Load and prepare image
+        self.image = pygame.image.load("src/Images/map/obstacles/bush.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, size)
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+
+        # Choose a random position inside the background (world coordinates)
+        max_x = max(0, self.background.image.get_width() - self.width)
+        max_y = max(0, self.background.image.get_height() - self.height)
+
+        # Spawn to the right of the player
+        def _random_x_right_of_player():
+            if player is None:
+                return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            try:
+                player_world_x = player.rect.x - self.background.rect.x
+            except Exception:
+                return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            # Only spawn to the right of player with safe distance
+            min_spawn_x = player_world_x + safe_distance
+            if max_x > min_spawn_x:
+                return random.randrange(min_spawn_x, max_x + 1)
+            else:
+                # fallback if range is invalid
+                return min_spawn_x
+
+        self.world_x = _random_x_right_of_player()
+        if player is not None:
+            self.world_y = player.rect.centery - (self.image.get_height() // 2)
+        else:
+            self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
+
+        # If still in center band, move to edge
+        center_safe_min = int(max_x * 0.3)
+        center_safe_max = int(max_x * 0.7)
+        if center_safe_min <= self.world_x <= center_safe_max:
+            if random.choice([True, False]):
+                self.world_x = random.randrange(0, center_safe_min) if center_safe_min > 0 else 0
+            else:
+                self.world_x = random.randrange(center_safe_max, max_x + 1) if center_safe_max < max_x else max_x
+
+        # Initial on-screen rect uses background offset
+        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
+
+        # Extra safety: if sprite ended up left of player on-screen, push it right of player
+        try:
+            if player is not None:
+                player_screen_right = player.rect.right
+                min_screen_x = player_screen_right + safe_distance
+                if self.rect.x < min_screen_x:
+                    # move world_x so on-screen x is just right of player
+                    self.world_x = max(min_screen_x - self.background.rect.x, 0)
+                    self.rect.x = int(self.world_x + self.background.rect.x)
+        except Exception:
+            pass
+
+    def update(self, dt=0):
+        # Keep onscreen rect in sync with background offset
+        self.rect.x = int(self.world_x + self.background.rect.x)
+        self.rect.y = int(self.world_y + self.background.rect.y)
+
+
+class Tree1(pygame.sprite.Sprite):
+    """Tree1 obstacle - harmless decoration, works like Rock"""
+    def __init__(self, background, size=(100, 120), player=None, safe_distance=200):
+        super().__init__()
+        self.background = background
+
+        # Load and prepare image
+        self.image = pygame.image.load("src/Images/map/obstacles/tree1.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, size)
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+
+        # Choose a random position inside the background (world coordinates)
+        max_x = max(0, self.background.image.get_width() - self.width)
+        max_y = max(0, self.background.image.get_height() - self.height)
+
+        # Spawn to the right of the player
+        def _random_x_right_of_player():
+            if player is None:
+                return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            try:
+                player_world_x = player.rect.x - self.background.rect.x
+            except Exception:
+                return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            # Only spawn to the right of player with safe distance
+            min_spawn_x = player_world_x + safe_distance
+            if max_x > min_spawn_x:
+                return random.randrange(min_spawn_x, max_x + 1)
+            else:
+                # fallback if range is invalid
+                return min_spawn_x
+
+        self.world_x = _random_x_right_of_player()
+        if player is not None:
+            self.world_y = player.rect.centery - (self.image.get_height() // 2)
+        else:
+            self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
+
+        # If still in center band, move to edge
+        center_safe_min = int(max_x * 0.3)
+        center_safe_max = int(max_x * 0.7)
+        if center_safe_min <= self.world_x <= center_safe_max:
+            if random.choice([True, False]):
+                self.world_x = random.randrange(0, center_safe_min) if center_safe_min > 0 else 0
+            else:
+                self.world_x = random.randrange(center_safe_max, max_x + 1) if center_safe_max < max_x else max_x
+
+        # Initial on-screen rect uses background offset
+        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
+
+        # Extra safety: if sprite ended up left of player on-screen, push it right of player
+        try:
+            if player is not None:
+                player_screen_right = player.rect.right
+                min_screen_x = player_screen_right + safe_distance
+                if self.rect.x < min_screen_x:
+                    # move world_x so on-screen x is just right of player
+                    self.world_x = max(min_screen_x - self.background.rect.x, 0)
+                    self.rect.x = int(self.world_x + self.background.rect.x)
+        except Exception:
+            pass
+
+    def update(self, dt=0):
+        # Keep onscreen rect in sync with background offset
+        self.rect.x = int(self.world_x + self.background.rect.x)
+        self.rect.y = int(self.world_y + self.background.rect.y)
+
+
+class Tree2(pygame.sprite.Sprite):
+    """Tree2 obstacle - harmless decoration, works like Rock"""
+    def __init__(self, background, size=(110, 130), player=None, safe_distance=200):
+        super().__init__()
+        self.background = background
+
+        # Load and prepare image
+        self.image = pygame.image.load("src/Images/map/obstacles/tree2.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, size)
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+
+        # Choose a random position inside the background (world coordinates)
+        max_x = max(0, self.background.image.get_width() - self.width)
+        max_y = max(0, self.background.image.get_height() - self.height)
+
+        # Spawn to the right of the player
+        def _random_x_right_of_player():
+            if player is None:
+                return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            try:
+                player_world_x = player.rect.x - self.background.rect.x
+            except Exception:
+                return random.randrange(0, max_x + 1) if max_x >= 0 else 0
+            # Only spawn to the right of player with safe distance
+            min_spawn_x = player_world_x + safe_distance
+            if max_x > min_spawn_x:
+                return random.randrange(min_spawn_x, max_x + 1)
+            else:
+                # fallback if range is invalid
+                return min_spawn_x
+
+        self.world_x = _random_x_right_of_player()
+        if player is not None:
+            self.world_y = player.rect.centery - (self.image.get_height() // 2)
+        else:
+            self.world_y = random.randrange(0, max_y + 1) if max_y >= 0 else 0
+
+        # If still in center band, move to edge
+        center_safe_min = int(max_x * 0.3)
+        center_safe_max = int(max_x * 0.7)
+        if center_safe_min <= self.world_x <= center_safe_max:
+            if random.choice([True, False]):
+                self.world_x = random.randrange(0, center_safe_min) if center_safe_min > 0 else 0
+            else:
+                self.world_x = random.randrange(center_safe_max, max_x + 1) if center_safe_max < max_x else max_x
+
+        # Initial on-screen rect uses background offset
+        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
+
+        # Extra safety: if sprite ended up left of player on-screen, push it right of player
+        try:
+            if player is not None:
+                player_screen_right = player.rect.right
+                min_screen_x = player_screen_right + safe_distance
+                if self.rect.x < min_screen_x:
+                    # move world_x so on-screen x is just right of player
+                    self.world_x = max(min_screen_x - self.background.rect.x, 0)
+                    self.rect.x = int(self.world_x + self.background.rect.x)
+        except Exception:
+            pass
+
+    def update(self, dt=0):
+        # Keep onscreen rect in sync with background offset
+        self.rect.x = int(self.world_x + self.background.rect.x)
+        self.rect.y = int(self.world_y + self.background.rect.y)

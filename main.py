@@ -78,20 +78,52 @@ class Main:
         #group to hold all active sprites (player, blades, bullets, etc.)
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.background)
-        self.all_sprites.add(self.player)
-        self.all_sprites.add(self.intro)
-
+        
         #obstacles live in world coordinates (move with background)
         self.obstacles = pygame.sprite.Group()
         portal_x = 8530  # Portal position
         safe_portal_distance = 300  # No obstacles within this distance of portal
-        for i in range(16):
-            rock = sprite.Rock(self.background, player=self.player)
-            # Ensure rock is not near portal
-            while abs(rock.world_x - portal_x) < safe_portal_distance:
-                rock = sprite.Rock(self.background, player=self.player)
-            self.obstacles.add(rock)
-            self.all_sprites.add(rock)
+        
+        # Helper function to spawn non-overlapping obstacles
+        def spawn_non_overlapping_obstacle(ObstacleClass, count, obstacle_list, background, player):
+            for _ in range(count):
+                obstacle = ObstacleClass(background, player=player)
+                # Keep regenerating until we find a spot that doesn't overlap with existing obstacles
+                max_attempts = 20
+                attempts = 0
+                while attempts < max_attempts:
+                    # Check if too close to portal
+                    if abs(obstacle.world_x - portal_x) < safe_portal_distance:
+                        obstacle = ObstacleClass(background, player=player)
+                        attempts += 1
+                        continue
+                    
+                    # Check for overlaps with existing obstacles
+                    overlaps = False
+                    for existing in obstacle_list:
+                        if obstacle.rect.colliderect(existing.rect):
+                            overlaps = True
+                            break
+                    
+                    if not overlaps:
+                        # Found a valid spot
+                        obstacle_list.add(obstacle)
+                        self.all_sprites.add(obstacle)
+                        break
+                    else:
+                        # Try again with a new obstacle
+                        obstacle = ObstacleClass(background, player=player)
+                        attempts += 1
+        
+        # Add rocks, bushes, and trees (decorations) - these render BEHIND the player
+        spawn_non_overlapping_obstacle(sprite.Rock, 16, self.obstacles, self.background, self.player)
+        spawn_non_overlapping_obstacle(sprite.Bush, 8, self.obstacles, self.background, self.player)
+        spawn_non_overlapping_obstacle(sprite.Tree1, 6, self.obstacles, self.background, self.player)
+        spawn_non_overlapping_obstacle(sprite.Tree2, 6, self.obstacles, self.background, self.player)
+        
+        # Add player AFTER decorations so it renders on top
+        self.all_sprites.add(self.player)
+        self.all_sprites.add(self.intro)
 
         self.portal = sprite.Portal(self.player, self.background)
         self.all_sprites.add(self.portal)
@@ -120,13 +152,7 @@ class Main:
             self.mini_boss2.rect.centerx = 3 * self.background.world_width // 4
             self.all_sprites.add(self.mini_boss2)
 
-        for i in range(5):
-            spikes = sprite.Spike(self.background, player=self.player)
-            # Ensure spikes are not near portal
-            while abs(spikes.world_x - portal_x) < safe_portal_distance:
-                spikes = sprite.Spike(self.background, player=self.player)
-            self.obstacles.add(spikes)
-            self.all_sprites.add(spikes)
+        spawn_non_overlapping_obstacle(sprite.Spike, 5, self.obstacles, self.background, self.player)
 
         # don't add the Group object itself into all_sprites (we already added each enemy)
         # self.all_sprites.add(self.enemies)
@@ -290,7 +316,8 @@ class Main:
     def check_collision(self):
             #collision handling only (drawing done by caller)
             for i in self.obstacles:
-                if i.rect.colliderect(self.player.rect):
+                # Only spikes kill the player; rocks are harmless
+                if isinstance(i, sprite.Spike) and i.rect.colliderect(self.player.rect):
                     #trigger death and freeze game
                     self.player.death()
                     if self.game_state:
