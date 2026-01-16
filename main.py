@@ -20,6 +20,7 @@ class Main:
         self.game_state = game_state
         self.app = app
         self.won = False
+        self.story_triggered = False
         #E - Entities
         self.entities()
         #A - Action (broken into ALTER steps)
@@ -35,7 +36,7 @@ class Main:
         # Font for UI
         self.font = pygame.font.SysFont(None, 36)
         #L - Loop
-        self.loop()
+        # self.loop()
         #Close the game window if we own it
         if self.owns_display:
             pygame.quit()
@@ -61,10 +62,11 @@ class Main:
         
 
         background_image = pygame.image.load("src/Images/map/Battleground1.png")
-        background_image = pygame.transform.scale(background_image, (10000, 600))
+        background_image = pygame.transform.scale(background_image, (11000, 1000))
         
         #Create background sprite for scrolling effect
         self.background = sprite.Background(background_image, screen_width=1920)
+        self.background.rect.y = 250  # Shift background up so player appears under the middle line
 
         #create a player from sprite module so we can render it
         self.player = sprite.Player()
@@ -109,7 +111,7 @@ class Main:
         # so regular bullets/blades won't auto-delete it; we handle boss hits separately)
         # boss is added AFTER portal so it renders on top
         if self.level == 1:
-            self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=50)
+            self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=1)
             self.all_sprites.add(self.boss)
         elif self.level == 2:
             # Mini bosses for level 2
@@ -375,6 +377,44 @@ class Main:
                         self.game_state.increment_death_count()
                         self.game_state.save()
                     self.game_over = True
+
+    def handle_event(self, event):
+        if event.type == pygame.QUIT:
+            self.keepGoing = False
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self.app.quit()
+            elif event.key == pygame.K_SPACE and hasattr(self, 'intro') and self.intro.active:
+                self.intro.next_line()
+            elif event.key == pygame.K_p:
+                self.paused = not self.paused
+
+    def update(self, dt):
+        if not self.game_over and not self.paused:
+            self.handle_input(dt)
+            self.check_collision()
+            self.all_sprites.update(dt)
+        elif self.game_over:
+            self.respawn_timer -= dt
+            if self.respawn_timer <= 0:
+                self.game_over = False
+                self.respawn_timer = None
+                self.player.rect.center = self.screen.get_rect().center
+                self.player.ground_y = self.player.rect.bottom
+                if self.game_state:
+                    self.game_state.increment_death_count()
+        if self.won and self.level == 1 and not self.story_triggered:
+            self.app.current_screen = surfacekeeper.VisualNovel(self.app, "stories/level1_end.json")
+            self.story_triggered = True
+
+    def draw(self, surface):
+        self.all_sprites.draw(surface)
+        if self.game_state:
+            death_text = self.font.render(f"Deaths: {self.game_state.death_count}", True, (255, 255, 255))
+            surface.blit(death_text, (10, 10))
+        if self.paused:
+            pause_text = self.font.render("Paused", True, (255, 255, 255))
+            surface.blit(pause_text, (self.size[0]//2 - 50, self.size[1]//2))
 
 
 

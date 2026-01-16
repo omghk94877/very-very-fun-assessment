@@ -1,5 +1,6 @@
 import pygame
 import random
+from json_loader import load_json
 
 class Player(pygame.sprite.Sprite):
     """
@@ -985,17 +986,12 @@ class BossBullet(pygame.sprite.Sprite):
 
 
 class Intro(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, story_file="stories/intro.json"):
         super().__init__()
+        self.story_file = story_file
+        self.story = load_json(self.story_file)
+        self.sentences = [item['line'] for item in self.story]
         self.active = False
-        self.sentences = [
-            "Welcome back to the world!",
-            "Root and bat monsters will approach toward you if u get too close.",
-            "Be careful, some monsters disguise into a TREE.",
-            "Dodge the fireballs carefully.",
-            "if you see the boss, try your best to kill it!",
-            "Good luck on your adventure!"
-        ]
         
     def next_line(self):
         if not self.active:
@@ -1038,13 +1034,14 @@ class Intro(pygame.sprite.Sprite):
         #render current line of text
         #only render if active and index is valid
         if self.active and self.index < len(self.sentences):
-            text = self.sentences[self.index]
+            item = self.story[self.index]
+            text = f"{item['name']}: {item['line']}"
             text_surf = self.font.render(text, True, (255, 255, 255))
             self.surface.blit(text_surf, (10, 30))
-
         elif not self.active or self.index >= len(self.sentences):
             # clear the text box
-            self.surface.fill((0, 0, 0, 0))  
+            self.surface.fill((0, 0, 0, 0))
+            self.finished = True  
 
 
 class Rock(pygame.sprite.Sprite):
