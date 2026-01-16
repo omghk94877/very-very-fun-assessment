@@ -406,7 +406,7 @@ class NameInput(ScreenManager):
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN and self.name.strip():
                 self.app.game_state.new_game(self.name.strip())
-                self.app.change_screen(VisualNovel(self.app, "intro"))
+                self.app.change_screen(VisualNovel(self.app, "stories/intro.json"))
             elif event.key == pygame.K_BACKSPACE:
                 self.name = self.name[:-1]
             elif event.key == pygame.K_ESCAPE:
@@ -487,7 +487,7 @@ class App:
         self.game_instance = main.Main(size=self.size, level=level, game_state=self.game_state, app=self)
         # After game ends, return to main menu or next story
         if level == 1 and self.game_instance.won:
-            self.change_screen(VisualNovel(self.app, "level1_end"))
+            self.change_screen(VisualNovel(self.app, "stories/level1_end.json"))
         elif level == 2:
             self.change_screen(MakeWhiteScreem(self.app))  # Black screen
         else:
