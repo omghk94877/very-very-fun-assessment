@@ -187,7 +187,7 @@ class MainMenu(ScreenManager):
                 surface.blit(self.image, (x, 0))
                 x += img_width
         
-        title = self.title_font.render("Monster Smash", True, (255, 220, 60))
+        title = self.title_font.render("Monster Mash", True, (255, 220, 60))
         surface.blit(title, title.get_rect(center=(self.app.size[0]//2, 50)))
 
         for b in self.buttons:
