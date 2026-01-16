@@ -708,7 +708,7 @@ class TracingFireball(pygame.sprite.Sprite):
             self.kill()
 
 
-class Other_blade(pygame.sprite.Sprite):
+class BladeFire(pygame.sprite.Sprite):
     def __init__(self, owner, time=300, offset=(0,0)):
         """Create a short-lived blade that appears outside the player and then disappears.
         The blade does not move after being spawned; it simply exists for `time` ms.
@@ -773,7 +773,7 @@ class Other_blade(pygame.sprite.Sprite):
         if self.timer >= self.count_time:
             self.kill()
 
-class Blade(pygame.sprite.Sprite):
+class BladeObsidian(pygame.sprite.Sprite):
     def __init__(self, owner, time=300, offset=(0,0)):
         """Create a short-lived blade that appears outside the player and then disappears.
         The blade does not move after being spawned; it simply exists for `time` ms.
@@ -805,7 +805,7 @@ class Blade(pygame.sprite.Sprite):
         if self.timer >= self.count_time:
             self.kill()
 
-class Blade(pygame.sprite.Sprite):
+class BladeBasic(pygame.sprite.Sprite):
     def __init__(self, owner, time=300, offset=(0,0)):
         """Create a short-lived blade that appears outside the player and then disappears.
         The blade does not move after being spawned; it simply exists for `time` ms.
