@@ -612,8 +612,8 @@ class SmallFireball(pygame.sprite.Sprite):
         self.frame_duration = 100 
 
         self.timer = 0
-        # Bullet lasts for 2 seconds
-        self.count_time = 2000
+        # Fireball lasts for 2 seconds
+        self.count_time = 10000
 
     def update(self, dt):
         self.world_x += self.vx * dt
@@ -958,11 +958,11 @@ class Intro(pygame.sprite.Sprite):
         super().__init__()
         self.active = False
         self.sentences = [
-            "Welcome to the game!",
-            "Use WASD to move around.",
-            "Press E to attack with a blade.",
-            "Press Q to shoot a bullet.",
-            "Press C to change weapons.",
+            "Welcome back to the world!",
+            "Root and bat monsters will approach toward you if u get too close.",
+            "Be careful, some monsters disguise into a TREE.",
+            "Dodge the fireballs carefully.",
+            "if you see the boss, try your best to kill it!",
             "Good luck on your adventure!"
         ]
         
