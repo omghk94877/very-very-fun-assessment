@@ -1,7 +1,7 @@
 [
     {
         "name": "Freyr",
-        "line": "you are finally awake, you have been slept for 500 year, our world ### has been conquered by monsters.",
+        "line": "you are finally awake, you have been asleep for 500 years, our world ### has been conquered by monsters.",
         "sound": "intro.wav",
         "background": "vn_bg1.png"
     },
@@ -12,7 +12,7 @@
         "background": "vn_bg2.png"
     },
     {
-        "name": "USER_NAME",
+        "name": "Freyr",
         "line": "It doesn't matter for now, brave USER_NAME now is your duty to save us from the devil monster ",
         "sound": "villain_laugh.wav",
         "background": "vn_bg3.png"

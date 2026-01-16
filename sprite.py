@@ -984,7 +984,6 @@ class Intro(pygame.sprite.Sprite):
         #active the text box, start with the first text
         self.active = True
         self.index = 0
-        self.index = 0
 
         self.font = pygame.font.SysFont(None, 20)
 
@@ -994,6 +993,12 @@ class Intro(pygame.sprite.Sprite):
         self.surface.fill((0, 0, 0, 160))
         self.image = self.surface
         self.rect = self.surface.get_rect(topleft=(200, 480))
+
+        # Render the first line
+        if self.sentences:
+            text = self.sentences[0]
+            text_surf = self.font.render(text, True, (255, 255, 255))
+            self.surface.blit(text_surf, (10, 10))
 
     def update(self, dt=0):
         

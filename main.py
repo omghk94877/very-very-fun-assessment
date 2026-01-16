@@ -340,10 +340,10 @@ class Main:
                         self.game_state.level1_completed = True
                         self.game_state.save()
                         import surfacekeeper
-                        self.app.change_screen(surfacekeeper.VisualNovel(self.app, "level1_end"))
+                        self.app.change_screen(surfacekeeper.VisualNovel(self.app, "stories/level1_end.json"))
                     else:
                         import surfacekeeper
-                        self.app.change_screen(surfacekeeper.VisualNovel(self.app, "portal"))
+                        self.app.change_screen(surfacekeeper.VisualNovel(self.app, "stories/portal.json"))
                 elif self.level == 2:
                     self.won = True
                     self.game_state.save()
