@@ -132,7 +132,8 @@ class Main:
         # self.all_sprites.add(self.enemies)
 
         self.intro.start()
-        #currently equipped weapon: 'flame' or 'obsidian'
+        #currently equipped weapon: 'flame' or '
+        # dian'
         self.weapon = 'flame'
         self.player.weapon = self.weapon
 
@@ -178,12 +179,14 @@ class Main:
 
                         #combat / UI keys
                         elif event.key == pygame.K_e:
-                            blade_exists = any(isinstance(s, (sprite.Blade, sprite.Other_blade)) for s in self.all_sprites.sprites())
+                            blade_exists = any(isinstance(s, (sprite.BladeBasic, sprite.BladeFire, sprite.BladeObsidian)) for s in self.all_sprites.sprites())
                             if not blade_exists:
                                 if getattr(self, 'weapon', 'flame') == 'obsidian':
-                                    blade = sprite.Other_blade(self.player)
-                                else:
-                                    blade = sprite.Blade(self.player)
+                                    blade = sprite.BladeObsidian(self.player)
+                                elif getattr(self, 'weapon', 'flame') == 'flame':
+                                    blade = sprite.BladeFire(self.player)
+                                else: 
+                                    blade = sprite.BladeBasic(self.player)
                                 self.all_sprites.add(blade)
                         elif event.key == pygame.K_q:
                             bullet = sprite.Bullet(self.player)
@@ -309,7 +312,7 @@ class Main:
      
             #Check collisions between blades and enemies: blades kill enemies on contact
             for blade in list(self.all_sprites.sprites()):
-                if isinstance(blade, (sprite.Blade, sprite.Other_blade)):
+                if isinstance(blade, (sprite.BladeBasic, sprite.BladeFire, sprite.BladeObsidian)):
                     hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, True)
                     if hit_enemies:
                         # Unlock obsidian after first enemy kill
@@ -353,7 +356,7 @@ class Main:
 
             # blade cancels boss projectiles (blade destroys any boss fireball it touches)
             for blade in list(self.all_sprites.sprites()):
-                if isinstance(blade, (sprite.Blade, sprite.Other_blade)):
+                if isinstance(blade, (sprite.BladeBasic, sprite.BladeFire, sprite.BladeObsidian)):
                     for proj in list(self.all_sprites.sprites()):
                         if isinstance(proj, (sprite.BigFireball, sprite.SmallFireball, sprite.TracingFireball, sprite.BossBullet)):
                             if blade.rect.colliderect(proj.rect):
