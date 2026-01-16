@@ -137,9 +137,7 @@ class MainMenu(ScreenManager):
 
         # Position image at top-left of screen
         if self.image:
-            self.rect = self.image.get_rect()
-            self.rect.left = 0
-            self.rect.top = 0
+            self.scroll_offset = 0
             self.scroll_speed = 1
         
         # 5 buttons: play, intro, load save, visual novel, quit
@@ -153,12 +151,11 @@ class MainMenu(ScreenManager):
     def update(self):
         '''Called automatically during Refresh to update sprite's position.'''
         if self.image:
-            # Move 1 pixel to the left on each frame (scrolling effect)
-            self.rect.left -= self.scroll_speed
-
-            # If we run out of image on the right, reset the left side again
-            if self.rect.right <= 0:
-                self.rect.left = 0
+            # Move scroll offset
+            self.scroll_offset -= self.scroll_speed
+            # Wrap around when we've scrolled past the image width
+            if self.scroll_offset <= -self.image.get_width():
+                self.scroll_offset += self.image.get_width()
 
     def handle_event(self, event):
         """
@@ -179,7 +176,16 @@ class MainMenu(ScreenManager):
         
         # draw scrolling background image if available
         if self.image:
-            surface.blit(self.image, self.rect)
+            img_width = self.image.get_width()
+            screen_width = self.app.size[0]
+            # Calculate starting x position
+            x = self.scroll_offset % img_width
+            if x > 0:
+                x -= img_width
+            # Draw copies until screen is covered
+            while x < screen_width:
+                surface.blit(self.image, (x, 0))
+                x += img_width
         
         title = self.title_font.render("Monster Smash", True, (255, 220, 60))
         surface.blit(title, title.get_rect(center=(self.app.size[0]//2, 50)))

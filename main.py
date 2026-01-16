@@ -132,9 +132,8 @@ class Main:
         # self.all_sprites.add(self.enemies)
 
         self.intro.start()
-        #currently equipped weapon: 'flame' or '
-        # dian'
-        self.weapon = 'flame'
+        #currently equipped weapon: 'basic', 'flame', or 'obsidian'
+        self.weapon = 'basic'
         self.player.weapon = self.weapon
 
     def loop(self):
@@ -181,11 +180,12 @@ class Main:
                         elif event.key == pygame.K_e:
                             blade_exists = any(isinstance(s, (sprite.BladeBasic, sprite.BladeFire, sprite.BladeObsidian)) for s in self.all_sprites.sprites())
                             if not blade_exists:
-                                if getattr(self, 'weapon', 'flame') == 'obsidian':
+                                weapon = getattr(self, 'weapon', 'basic')
+                                if weapon == 'obsidian':
                                     blade = sprite.BladeObsidian(self.player)
-                                elif getattr(self, 'weapon', 'flame') == 'flame':
+                                elif weapon == 'flame':
                                     blade = sprite.BladeFire(self.player)
-                                else: 
+                                else:  # basic
                                     blade = sprite.BladeBasic(self.player)
                                 self.all_sprites.add(blade)
                         elif event.key == pygame.K_q:
@@ -194,13 +194,18 @@ class Main:
                         elif event.key == pygame.K_SPACE:
                             self.intro.next_line()
                         elif event.key == pygame.K_c:
-                            #toggle equipped weapon between flame and obsidian if unlocked
-                            if self.game_state.obsidian_unlocked:
-                                if getattr(self, 'weapon', 'flame') == 'flame':
+                            #cycle equipped weapon: basic -> flame -> obsidian -> basic (obsidian only if unlocked)
+                            current_weapon = getattr(self, 'weapon', 'basic')
+                            if current_weapon == 'basic':
+                                self.weapon = 'flame'
+                            elif current_weapon == 'flame':
+                                if self.game_state.obsidian_unlocked:
                                     self.weapon = 'obsidian'
                                 else:
-                                    self.weapon = 'flame'
-                                self.player.weapon = self.weapon
+                                    self.weapon = 'basic'
+                            elif current_weapon == 'obsidian':
+                                self.weapon = 'basic'
+                            self.player.weapon = self.weapon
                 elif event.type == pygame.KEYUP and not self.game_over and not self.paused:
                     #when releasing movement keys, return to standing image
                     if event.key in (pygame.K_a, pygame.K_d, pygame.K_w):
@@ -273,7 +278,7 @@ class Main:
                 self.screen.blit(overlay, (0, 0))
                 # Menu text
                 resume_text = self.font.render("Resume (R)", True, (255, 255, 255))
-                quit_text = self.font.render("Quit (Q)", True, (255, 255, 255))
+                quit_text = self.font.render("Back to Main Menu (Q)", True, (255, 255, 255))
                 menu_title = self.font.render("Paused", True, (255, 255, 255))
                 self.screen.blit(menu_title, (self.size[0]//2 - menu_title.get_width()//2, self.size[1]//2 - 100))
                 self.screen.blit(resume_text, (self.size[0]//2 - resume_text.get_width()//2, self.size[1]//2 - 20))
