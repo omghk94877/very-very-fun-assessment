@@ -20,7 +20,6 @@ class Main:
         self.game_state = game_state
         self.app = app
         self.won = False
-        self.story_triggered = False
         #E - Entities
         self.entities()
         #A - Action (broken into ALTER steps)
@@ -36,7 +35,7 @@ class Main:
         # Font for UI
         self.font = pygame.font.SysFont(None, 36)
         #L - Loop
-        # self.loop()
+        self.loop()
         #Close the game window if we own it
         if self.owns_display:
             pygame.quit()
@@ -62,11 +61,10 @@ class Main:
         
 
         background_image = pygame.image.load("src/Images/map/Battleground1.png")
-        background_image = pygame.transform.scale(background_image, (11000, 1000))
+        background_image = pygame.transform.scale(background_image, (10000, 600))
         
         #Create background sprite for scrolling effect
         self.background = sprite.Background(background_image, screen_width=1920)
-        self.background.rect.y = 250  # Shift background up so player appears under the middle line
 
         #create a player from sprite module so we can render it
         self.player = sprite.Player()
@@ -111,7 +109,7 @@ class Main:
         # so regular bullets/blades won't auto-delete it; we handle boss hits separately)
         # boss is added AFTER portal so it renders on top
         if self.level == 1:
-            self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=1)
+            self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=50)
             self.all_sprites.add(self.boss)
         elif self.level == 2:
             # Mini bosses for level 2
@@ -134,8 +132,8 @@ class Main:
         # self.all_sprites.add(self.enemies)
 
         self.intro.start()
-        #currently equipped weapon: 'basic', 'flame', or 'obsidian'
-        self.weapon = 'basic'
+        #currently equipped weapon: 'flame' or 'obsidian'
+        self.weapon = 'flame'
         self.player.weapon = self.weapon
 
     def loop(self):
@@ -180,15 +178,12 @@ class Main:
 
                         #combat / UI keys
                         elif event.key == pygame.K_e:
-                            blade_exists = any(isinstance(s, (sprite.BladeBasic, sprite.BladeFire, sprite.BladeObsidian)) for s in self.all_sprites.sprites())
+                            blade_exists = any(isinstance(s, (sprite.Blade, sprite.Other_blade)) for s in self.all_sprites.sprites())
                             if not blade_exists:
-                                weapon = getattr(self, 'weapon', 'basic')
-                                if weapon == 'obsidian':
-                                    blade = sprite.BladeObsidian(self.player)
-                                elif weapon == 'flame':
-                                    blade = sprite.BladeFire(self.player)
-                                else:  # basic
-                                    blade = sprite.BladeBasic(self.player)
+                                if getattr(self, 'weapon', 'flame') == 'obsidian':
+                                    blade = sprite.Other_blade(self.player)
+                                else:
+                                    blade = sprite.Blade(self.player)
                                 self.all_sprites.add(blade)
                         elif event.key == pygame.K_q:
                             bullet = sprite.Bullet(self.player)
@@ -196,18 +191,13 @@ class Main:
                         elif event.key == pygame.K_SPACE:
                             self.intro.next_line()
                         elif event.key == pygame.K_c:
-                            #cycle equipped weapon: basic -> flame -> obsidian -> basic (obsidian only if unlocked)
-                            current_weapon = getattr(self, 'weapon', 'basic')
-                            if current_weapon == 'basic':
-                                self.weapon = 'flame'
-                            elif current_weapon == 'flame':
-                                if self.game_state.obsidian_unlocked:
+                            #toggle equipped weapon between flame and obsidian if unlocked
+                            if self.game_state.obsidian_unlocked:
+                                if getattr(self, 'weapon', 'flame') == 'flame':
                                     self.weapon = 'obsidian'
                                 else:
-                                    self.weapon = 'basic'
-                            elif current_weapon == 'obsidian':
-                                self.weapon = 'basic'
-                            self.player.weapon = self.weapon
+                                    self.weapon = 'flame'
+                                self.player.weapon = self.weapon
                 elif event.type == pygame.KEYUP and not self.game_over and not self.paused:
                     #when releasing movement keys, return to standing image
                     if event.key in (pygame.K_a, pygame.K_d, pygame.K_w):
@@ -280,7 +270,7 @@ class Main:
                 self.screen.blit(overlay, (0, 0))
                 # Menu text
                 resume_text = self.font.render("Resume (R)", True, (255, 255, 255))
-                quit_text = self.font.render("Back to Main Menu (Q)", True, (255, 255, 255))
+                quit_text = self.font.render("Quit (Q)", True, (255, 255, 255))
                 menu_title = self.font.render("Paused", True, (255, 255, 255))
                 self.screen.blit(menu_title, (self.size[0]//2 - menu_title.get_width()//2, self.size[1]//2 - 100))
                 self.screen.blit(resume_text, (self.size[0]//2 - resume_text.get_width()//2, self.size[1]//2 - 20))
@@ -319,7 +309,7 @@ class Main:
      
             #Check collisions between blades and enemies: blades kill enemies on contact
             for blade in list(self.all_sprites.sprites()):
-                if isinstance(blade, (sprite.BladeBasic, sprite.BladeFire, sprite.BladeObsidian)):
+                if isinstance(blade, (sprite.Blade, sprite.Other_blade)):
                     hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, True)
                     if hit_enemies:
                         # Unlock obsidian after first enemy kill
@@ -363,7 +353,7 @@ class Main:
 
             # blade cancels boss projectiles (blade destroys any boss fireball it touches)
             for blade in list(self.all_sprites.sprites()):
-                if isinstance(blade, (sprite.BladeBasic, sprite.BladeFire, sprite.BladeObsidian)):
+                if isinstance(blade, (sprite.Blade, sprite.Other_blade)):
                     for proj in list(self.all_sprites.sprites()):
                         if isinstance(proj, (sprite.BigFireball, sprite.SmallFireball, sprite.TracingFireball, sprite.BossBullet)):
                             if blade.rect.colliderect(proj.rect):
@@ -377,44 +367,6 @@ class Main:
                         self.game_state.increment_death_count()
                         self.game_state.save()
                     self.game_over = True
-
-    def handle_event(self, event):
-        if event.type == pygame.QUIT:
-            self.keepGoing = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                self.app.quit()
-            elif event.key == pygame.K_SPACE and hasattr(self, 'intro') and self.intro.active:
-                self.intro.next_line()
-            elif event.key == pygame.K_p:
-                self.paused = not self.paused
-
-    def update(self, dt):
-        if not self.game_over and not self.paused:
-            self.handle_input(dt)
-            self.check_collision()
-            self.all_sprites.update(dt)
-        elif self.game_over:
-            self.respawn_timer -= dt
-            if self.respawn_timer <= 0:
-                self.game_over = False
-                self.respawn_timer = None
-                self.player.rect.center = self.screen.get_rect().center
-                self.player.ground_y = self.player.rect.bottom
-                if self.game_state:
-                    self.game_state.increment_death_count()
-        if self.won and self.level == 1 and not self.story_triggered:
-            self.app.current_screen = surfacekeeper.VisualNovel(self.app, "stories/level1_end.json")
-            self.story_triggered = True
-
-    def draw(self, surface):
-        self.all_sprites.draw(surface)
-        if self.game_state:
-            death_text = self.font.render(f"Deaths: {self.game_state.death_count}", True, (255, 255, 255))
-            surface.blit(death_text, (10, 10))
-        if self.paused:
-            pause_text = self.font.render("Paused", True, (255, 255, 255))
-            surface.blit(pause_text, (self.size[0]//2 - 50, self.size[1]//2))
 
 
 

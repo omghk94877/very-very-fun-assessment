@@ -137,7 +137,9 @@ class MainMenu(ScreenManager):
 
         # Position image at top-left of screen
         if self.image:
-            self.scroll_offset = 0
+            self.rect = self.image.get_rect()
+            self.rect.left = 0
+            self.rect.top = 0
             self.scroll_speed = 1
         
         # 5 buttons: play, intro, load save, visual novel, quit
@@ -151,11 +153,12 @@ class MainMenu(ScreenManager):
     def update(self):
         '''Called automatically during Refresh to update sprite's position.'''
         if self.image:
-            # Move scroll offset
-            self.scroll_offset -= self.scroll_speed
-            # Wrap around when we've scrolled past the image width
-            if self.scroll_offset <= -self.image.get_width():
-                self.scroll_offset += self.image.get_width()
+            # Move 1 pixel to the left on each frame (scrolling effect)
+            self.rect.left -= self.scroll_speed
+
+            # If we run out of image on the right, reset the left side again
+            if self.rect.right <= 0:
+                self.rect.left = 0
 
     def handle_event(self, event):
         """
@@ -176,16 +179,7 @@ class MainMenu(ScreenManager):
         
         # draw scrolling background image if available
         if self.image:
-            img_width = self.image.get_width()
-            screen_width = self.app.size[0]
-            # Calculate starting x position
-            x = self.scroll_offset % img_width
-            if x > 0:
-                x -= img_width
-            # Draw copies until screen is covered
-            while x < screen_width:
-                surface.blit(self.image, (x, 0))
-                x += img_width
+            surface.blit(self.image, self.rect)
         
         title = self.title_font.render("Monster Mash", True, (255, 220, 60))
         surface.blit(title, title.get_rect(center=(self.app.size[0]//2, 50)))
@@ -220,8 +214,7 @@ class ShowIntro(ScreenManager):
             "src/Images/intro/intro-3.png",
             "src/Images/intro/intro-4.png",
             "src/Images/intro/intro-5.png",
-            "src/Images/intro/intro-6.png",
-            "src/Images/intro/intro-7.png"
+            "src/Images/intro/intro-6.png"
         ]
 
         self.intro_images = []
@@ -319,11 +312,12 @@ class MakeSave(ScreenManager, make_save.SaveSystem):
 
 
 class VisualNovel(ScreenManager):
-    def __init__(self, app, story_file="stories/intro.json"):
+    def __init__(self, app, story_part="intro"):
         super().__init__(app)
         self.font = pygame.font.SysFont(None, 24)
         self.name_font = pygame.font.SysFont(None, 28)
-        self.story_file = story_file
+        self.story_part = story_part
+        self.story_file = f"stories/{story_part}.json"
         self.story_data = load_json(self.story_file) or []
         self.current_index = 0
         self.background = None
@@ -362,9 +356,11 @@ class VisualNovel(ScreenManager):
             self.on_story_end()
 
     def on_story_end(self):
-        if "level1_end" in self.story_file:
-            self.app.current_screen = VisualNovel(self.app, "stories/portal.json")
-        elif "portal" in self.story_file:
+        if self.story_part == "intro":
+            self.app.start_game(1)
+        elif self.story_part == "level1_end":
+            self.app.start_game(1)
+        elif self.story_part == "portal":
             self.app.start_game(2)
         else:
             self.app.change_screen(MainMenu(self.app))

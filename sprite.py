@@ -1,6 +1,5 @@
 import pygame
 import random
-from json_loader import load_json
 
 class Player(pygame.sprite.Sprite):
     """
@@ -709,7 +708,7 @@ class TracingFireball(pygame.sprite.Sprite):
             self.kill()
 
 
-class BladeFire(pygame.sprite.Sprite):
+class Other_blade(pygame.sprite.Sprite):
     def __init__(self, owner, time=300, offset=(0,0)):
         """Create a short-lived blade that appears outside the player and then disappears.
         The blade does not move after being spawned; it simply exists for `time` ms.
@@ -774,7 +773,7 @@ class BladeFire(pygame.sprite.Sprite):
         if self.timer >= self.count_time:
             self.kill()
 
-class BladeObsidian(pygame.sprite.Sprite):
+class Blade(pygame.sprite.Sprite):
     def __init__(self, owner, time=300, offset=(0,0)):
         """Create a short-lived blade that appears outside the player and then disappears.
         The blade does not move after being spawned; it simply exists for `time` ms.
@@ -806,37 +805,6 @@ class BladeObsidian(pygame.sprite.Sprite):
         if self.timer >= self.count_time:
             self.kill()
 
-class BladeBasic(pygame.sprite.Sprite):
-    def __init__(self, owner, time=300, offset=(0,0)):
-        """Create a short-lived blade that appears outside the player and then disappears.
-        The blade does not move after being spawned; it simply exists for `time` ms.
-        """
-        super().__init__()
-        self.owner = owner
-        self.offset = offset
-        # thin rectangle to look like a blade
-        self.image = pygame.image.load("src/Images/weapon/sword/basic/basic_sword.png")
-        self.image = pygame.transform.rotate(self.image, -90)
-        self.image = pygame.transform.scale(self.image, (100, 35))
-        facing = getattr(self.owner, 'facing', 'right')
-        if facing == 'right':
-            x = self.owner.rect.right + 5 + self.offset[0]
-        elif facing == "left":
-            self.image = pygame.transform.rotate(self.image, 180)
-            x = self.owner.rect.left - self.image.get_width() - 5 + self.offset[0]
-        y = self.owner.rect.centery - (self.image.get_height() // 2) + self.offset[1]
-        self.rect = self.image.get_rect(topleft=(x, y))
-
-        self.timer = 0
-        self.count_time = 300
-        # normal blade damage (higher than bullet)
-        self.damage = 40
-
-    def update(self, dt):
-        """Advance lifetime; blade does not move after spawning."""
-        self.timer += dt
-        if self.timer >= self.count_time:
-            self.kill()
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, owner, speed=100, offset=(0,0)):
@@ -986,12 +954,17 @@ class BossBullet(pygame.sprite.Sprite):
 
 
 class Intro(pygame.sprite.Sprite):
-    def __init__(self, story_file="stories/intro.json"):
+    def __init__(self):
         super().__init__()
-        self.story_file = story_file
-        self.story = load_json(self.story_file)
-        self.sentences = [item['line'] for item in self.story]
         self.active = False
+        self.sentences = [
+            "Welcome back to the world!",
+            "Root and bat monsters will approach toward you if u get too close.",
+            "Be careful, some monsters disguise into a TREE.",
+            "Dodge the fireballs carefully.",
+            "if you see the boss, try your best to kill it!",
+            "Good luck on your adventure!"
+        ]
         
     def next_line(self):
         if not self.active:
@@ -1034,14 +1007,13 @@ class Intro(pygame.sprite.Sprite):
         #render current line of text
         #only render if active and index is valid
         if self.active and self.index < len(self.sentences):
-            item = self.story[self.index]
-            text = f"{item['name']}: {item['line']}"
+            text = self.sentences[self.index]
             text_surf = self.font.render(text, True, (255, 255, 255))
             self.surface.blit(text_surf, (10, 30))
+
         elif not self.active or self.index >= len(self.sentences):
             # clear the text box
-            self.surface.fill((0, 0, 0, 0))
-            self.finished = True  
+            self.surface.fill((0, 0, 0, 0))  
 
 
 class Rock(pygame.sprite.Sprite):
