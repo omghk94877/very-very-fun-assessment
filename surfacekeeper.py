@@ -347,6 +347,10 @@ class VisualNovel(ScreenManager):
     def on_story_end(self):
         if self.story_part == "intro":
             self.app.start_game_real(1)
+        elif self.story_part == "boss_defeat":
+            # After boss defeat story, start level 1 again — since
+            # `game_state.level1_completed` is already set, the boss won't respawn.
+            self.app.start_game_real(1)
         elif self.story_part == "level1_end":
             if self.previous_screen:
                 self.app.change_screen(self.previous_screen)
@@ -549,8 +553,15 @@ class App:
         self.game_instance = main.Main(self, level=level, game_state=self.game_state)
         # Run the game's loop (blocks until game ends)
         self.game_instance.loop()
-        # After the game's loop finishes, return to the main menu
-        self.change_screen(MainMenu(self))
+        # After the game's loop finishes, check if the game requested a follow-up action
+        action = getattr(self.game_instance, 'next_action', None)
+        if action and action[0] == 'visual_novel':
+            # action format: ('visual_novel', story_name)
+            _, story_name = action
+            self.change_screen(VisualNovel(self, story_name))
+        else:
+            # Default: return to main menu
+            self.change_screen(MainMenu(self))
     
     def quit(self):
         """Quit the application"""

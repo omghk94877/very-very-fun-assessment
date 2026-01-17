@@ -20,6 +20,8 @@ class Main(surfacekeeper.ScreenManager):
         self.won = False
         #E - Entities
         self.entities()
+        # Action requested by game loop after exit (used to request VN, restart, etc.)
+        self.next_action = None
         #game state flag: when True, freeze most updates (allow death animation)
         self.game_over = False
         # respawn timer (ms). When game_over becomes True this is set and counts down.
@@ -310,11 +312,13 @@ class Main(surfacekeeper.ScreenManager):
                     if getattr(self, 'boss', None) is not None and spr.rect.colliderect(self.boss.rect):
                         # count a hit and remove bullet
                         if self.boss.take_hit():
-                            # boss died, trigger level1_end story
-                            self.game_state.level1_completed = True
-                            self.game_state.save()
-                            import surfacekeeper
-                            self.app.change_screen(surfacekeeper.VisualNovel(self.app, "level1_end", previous_screen=self))
+                            # boss died — mark level complete, save, request VN then stop loop
+                            if self.game_state:
+                                self.game_state.level1_completed = True
+                                self.game_state.save()
+                            # request visual novel 'boss_defeat' to play after loop
+                            self.next_action = ('visual_novel', 'boss_defeat')
+                            self.keepGoing = False
                         spr.kill()
      
             #Check collisions between blades and enemies: blades kill enemies on contact
@@ -327,11 +331,12 @@ class Main(surfacekeeper.ScreenManager):
                     # blade hitting boss
                     if getattr(self, 'boss', None) is not None and blade.rect.colliderect(self.boss.rect):
                         if self.boss.take_hit():
-                            # boss died, trigger level1_end story
-                            self.game_state.level1_completed = True
-                            self.game_state.save()
-                            import surfacekeeper
-                            self.app.change_screen(surfacekeeper.VisualNovel(self.app, "level1_end", previous_screen=self))
+                            # boss died — mark level complete, save, request VN then stop loop
+                            if self.game_state:
+                                self.game_state.level1_completed = True
+                                self.game_state.save()
+                            self.next_action = ('visual_novel', 'boss_defeat')
+                            self.keepGoing = False
      
             # projectiles from boss kill player on contact
             for spr in list(self.all_sprites.sprites()):
