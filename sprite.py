@@ -88,6 +88,8 @@ class Player(pygame.sprite.Sprite):
         # ground y coordinate (pixels) - should be set by caller after positioning player
         self.ground_y = None
 
+        self.obsidian_blade = ObsidianAbility(self)
+
     def move_left(self):
         # switch to left-walk animation
         self.set_animation('move_l')
@@ -191,6 +193,8 @@ class Player(pygame.sprite.Sprite):
                     self.vy = 0.0
                     self.on_ground = True
                     # self.init_move()
+
+        self.obsidian_blade.update(dt)
 
 class Background(pygame.sprite.Sprite):
     def __init__(self, image, screen_width=1920):
@@ -708,7 +712,7 @@ class TracingFireball(pygame.sprite.Sprite):
             self.kill()
 
 
-class Other_blade(pygame.sprite.Sprite):
+class OtherBlade(pygame.sprite.Sprite):
     def __init__(self, owner, time=300, offset=(0,0)):
         """Create a short-lived blade that appears outside the player and then disappears.
         The blade does not move after being spawned; it simply exists for `time` ms.
@@ -1231,3 +1235,86 @@ class Portal(pygame.sprite.Sprite):
         # ensure rect follows background offset
         self.rect.x = int(self.world_x + self.background.rect.x)
         self.rect.y = self.world_y
+
+
+class Shield(pygame.sprite.Sprite):
+    def __init__(self, owner):
+        super().__init__()
+        self.owner = owner
+        # Try to load shield_active.gif, fallback to obsidian sword
+        try:
+            self.image = pygame.image.load(r"src\Images\shield_active.gif").convert_alpha()
+            self.image = pygame.transform.scale(self.image, (100, 100))
+        except:
+            self.image = pygame.image.load(r"src\Images\weapon\sword\obsidian\Obsidian_sword.png").convert_alpha()
+            self.image = pygame.transform.scale(self.image, (100, 100))
+        self.rect = self.image.get_rect(center=owner.rect.center)
+        self.timer = 0
+        self.duration = 2000  # 2 seconds
+        self.blocks_remaining = 1
+
+    def update(self, dt):
+        self.timer += dt
+        self.rect.center = self.owner.rect.center
+        if self.timer >= self.duration:
+            self.kill()
+
+    def block_attack(self):
+        self.blocks_remaining -= 1
+        if self.blocks_remaining <= 0:
+            self.kill()
+
+
+class ObsidianAbility:
+    def __init__(self, player):
+        self.player = player
+        self.cooldown = 0
+        self.cooldown_duration = 10000  # 10 seconds
+        self.shield = None
+
+    def use(self):
+        if self.cooldown > 0:
+            return False
+        # Create shield
+        self.shield = Shield(self.player)
+        self.cooldown = self.cooldown_duration
+        return True
+
+    def update(self, dt):
+        if self.cooldown > 0:
+            self.cooldown -= dt
+        if self.shield and not self.shield.alive():
+            self.shield = None
+
+
+class ObsidianBlade(pygame.sprite.Sprite):
+    def __init__(self, owner, time=300, offset=(0,0)):
+        """Create a short-lived obsidian blade that appears outside the player and then disappears.
+        """
+        super().__init__()
+        self.owner = owner
+        self.offset = offset
+        # Load obsidian sword image
+        self.image = pygame.image.load(r"src\Images\weapon\sword\obsidian\Obsidian_sword.png").convert_alpha()
+        self.image = pygame.transform.rotate(self.image, -90)
+        self.image = pygame.transform.scale(self.image, (100, 35))
+        facing = getattr(self.owner, 'facing', 'right')
+        if facing == 'right':
+            x = self.owner.rect.right + 5 + self.offset[0]
+        elif facing == "left":
+            self.image = pygame.transform.rotate(self.image, 180)
+            x = self.owner.rect.left - self.image.get_width() - 5 + self.offset[0]
+        y = self.owner.rect.centery - (self.image.get_height() // 2) + self.offset[1]
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+        self.timer = 0
+        self.count_time = 300
+        # obsidian blade damage (strong)
+        self.damage = 60
+
+    def update(self, dt):
+        """Advance lifetime; blade does not move after spawning."""
+        self.timer += dt
+        if self.timer >= self.count_time:
+            self.kill()
+

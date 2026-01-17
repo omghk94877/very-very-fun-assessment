@@ -34,6 +34,7 @@ class Main:
         self.paused = False
         # Font for UI
         self.font = pygame.font.SysFont(None, 36)
+        self.weapon = 'basic'
         #L - Loop
         self.loop()
         #Close the game window if we own it
@@ -178,12 +179,19 @@ class Main:
 
                         #combat / UI keys
                         elif event.key == pygame.K_e:
-                            blade_exists = any(isinstance(s, (sprite.Blade, sprite.Other_blade)) for s in self.all_sprites.sprites())
+                            blade_exists = any(isinstance(s, (sprite.Blade, sprite.OtherBlade, sprite.ObsidianBlade)) for s in self.all_sprites.sprites())
                             if not blade_exists:
-                                if getattr(self, 'weapon', 'flame') == 'obsidian':
-                                    blade = sprite.Other_blade(self.player)
-                                else:
+                                if self.weapon == 'basic':
                                     blade = sprite.Blade(self.player)
+                                elif self.weapon == 'flame':
+                                    blade = sprite.OtherBlade(self.player)
+                                elif self.weapon == 'obsidian':
+                                    if self.player.obsidian_blade.cooldown <= 0:
+                                        if self.player.obsidian_blade.use():
+                                            self.all_sprites.add(self.player.obsidian_blade.shield)
+                                        return  # don't add blade if shield activated
+                                    else:
+                                        blade = sprite.ObsidianBlade(self.player)
                                 self.all_sprites.add(blade)
                         elif event.key == pygame.K_q:
                             bullet = sprite.Bullet(self.player)
@@ -191,13 +199,17 @@ class Main:
                         elif event.key == pygame.K_SPACE:
                             self.intro.next_line()
                         elif event.key == pygame.K_c:
-                            #toggle equipped weapon between flame and obsidian if unlocked
-                            if self.game_state.obsidian_unlocked:
-                                if getattr(self, 'weapon', 'flame') == 'flame':
+                            # toggle weapon: basic -> flame -> obsidian (if level1 cleared) -> basic
+                            if self.weapon == 'basic':
+                                self.weapon = 'flame'
+                            elif self.weapon == 'flame':
+                                if self.game_state.level1_completed:
                                     self.weapon = 'obsidian'
                                 else:
-                                    self.weapon = 'flame'
-                                self.player.weapon = self.weapon
+                                    self.weapon = 'basic'
+                            elif self.weapon == 'obsidian':
+                                self.weapon = 'basic'
+                            self.player.weapon = self.weapon
                 elif event.type == pygame.KEYUP and not self.game_over and not self.paused:
                     #when releasing movement keys, return to standing image
                     if event.key in (pygame.K_a, pygame.K_d, pygame.K_w):
@@ -228,6 +240,7 @@ class Main:
                 #normal gameplay: update everything and check collisions
                 self.all_sprites.update(dt)
                 self.check_collision()
+                self.check_shield_collision()
             elif self.game_over:
                 #freeze everything except allow the player's death animation to advance
                 #stop background so world does not move
@@ -261,6 +274,12 @@ class Main:
                 skull_text = "X " + str(self.game_state.death_count)
                 death_surf = self.font.render(skull_text, True, (255, 255, 255))
                 self.screen.blit(death_surf, (10, 10))
+
+            # Draw ability cooldown
+            if hasattr(self.player, 'obsidian_blade') and self.player.obsidian_blade.cooldown > 0:
+                cooldown_text = "Ability Cooldown"
+                cooldown_surf = self.font.render(cooldown_text, True, (255, 0, 0))
+                self.screen.blit(cooldown_surf, (10, 40))
 
             # Draw pause menu
             if self.paused:
@@ -297,10 +316,6 @@ class Main:
                     hit_enemies = pygame.sprite.spritecollide(spr, self.enemies, True)
                     if hit_enemies:
                         spr.kill()
-                        # Unlock obsidian after first enemy kill
-                        if not self.game_state.obsidian_unlocked:
-                            self.game_state.obsidian_unlocked = True
-                            self.game_state.save()
                     # bullet hitting boss: boss takes one hit (50 required to die)
                     if getattr(self, 'boss', None) is not None and spr.rect.colliderect(self.boss.rect):
                         # count a hit and remove bullet
@@ -309,13 +324,9 @@ class Main:
      
             #Check collisions between blades and enemies: blades kill enemies on contact
             for blade in list(self.all_sprites.sprites()):
-                if isinstance(blade, (sprite.Blade, sprite.Other_blade)):
+                if isinstance(blade, (sprite.Blade, sprite.OtherBlade, sprite.ObsidianBlade)):
                     hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, True)
                     if hit_enemies:
-                        # Unlock obsidian after first enemy kill
-                        if not self.game_state.obsidian_unlocked:
-                            self.game_state.obsidian_unlocked = True
-                            self.game_state.save()
                         # optionally keep blade alive until its timer; do not need to call blade.kill() here
                         pass
                     # blade hitting boss
@@ -353,7 +364,7 @@ class Main:
 
             # blade cancels boss projectiles (blade destroys any boss fireball it touches)
             for blade in list(self.all_sprites.sprites()):
-                if isinstance(blade, (sprite.Blade, sprite.Other_blade)):
+                if isinstance(blade, (sprite.Blade, sprite.OtherBlade)):
                     for proj in list(self.all_sprites.sprites()):
                         if isinstance(proj, (sprite.BigFireball, sprite.SmallFireball, sprite.TracingFireball, sprite.BossBullet)):
                             if blade.rect.colliderect(proj.rect):
@@ -367,6 +378,16 @@ class Main:
                         self.game_state.increment_death_count()
                         self.game_state.save()
                     self.game_over = True
+
+    def check_shield_collision(self):
+        shield = getattr(self.player.obsidian_blade, 'shield', None)
+        if shield and shield.alive():
+            projectiles = [s for s in self.all_sprites.sprites() if isinstance(s, (sprite.Bullet, sprite.BossBullet, sprite.SmallFireball, sprite.BigFireball, sprite.TracingFireball))]
+            for proj in projectiles:
+                if pygame.sprite.collide_rect(shield, proj):
+                    shield.block_attack()
+                    proj.kill()
+                    break
 
 
 

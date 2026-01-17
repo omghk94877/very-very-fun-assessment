@@ -3,6 +3,7 @@ import make_save
 import os
 from json_loader import load_json
 import game_state
+import random
  
 class ScreenManager:
     """
@@ -115,6 +116,41 @@ class Button:
                 if callable(self.onclick):
                     self.onclick()
 
+
+
+class LogoScreen(ScreenManager):
+    def __init__(self, app):
+        super().__init__(app)
+        # Randomly choose Logo_1 or Logo_2
+        logo_choice = random.choice(['Logo_1.png', 'Logo_2.png'])
+        try:
+            self.image = pygame.image.load(f"src/Images/intro/{logo_choice}").convert()
+            self.image = pygame.transform.scale(self.image, self.app.size)
+        except:
+            # Fallback
+            self.image = pygame.Surface(self.app.size)
+            self.image.fill((0, 0, 0))
+        self.alpha = 255
+        self.image.set_alpha(self.alpha)
+        self.timer = 0
+        self.display_duration = 3000  # 3 seconds
+        self.fade_duration = 1000  # 1 second
+        self.fading = False
+
+    def update(self):
+        dt = self.app.clock.get_time()
+        self.timer += dt
+        if not self.fading and self.timer >= self.display_duration:
+            self.fading = True
+            self.timer = 0
+        if self.fading:
+            self.alpha = max(0, 255 - int(255 * (self.timer / self.fade_duration)))
+            self.image.set_alpha(self.alpha)
+            if self.alpha <= 0:
+                self.app.change_screen(MainMenu(self.app))
+
+    def draw(self, surface):
+        surface.blit(self.image, (0, 0))
 
 
 class MainMenu(ScreenManager):
@@ -464,8 +500,8 @@ class App:
         self.game_instance = None
         self.game_state = game_state.GameState()
         
-        # Start with main menu
-        self.change_screen(MainMenu(self))
+        # Start with logo screen
+        self.change_screen(LogoScreen(self))
         
     def change_screen(self, new_screen):
         """Change to a new screen"""
