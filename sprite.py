@@ -1173,11 +1173,11 @@ class Portal(pygame.sprite.Sprite):
         # load boss frames (safe loads; if missing, create placeholder)
         try:
             self.frames = [
-                pygame.image.load("src\Images\portals\portal0.gif"),
-                pygame.image.load("src\Images\portals\portal1.gif"),
-                pygame.image.load("src\Images\portals\portal2.gif"),
-                pygame.image.load("src\Images\portals\portal3.gif"),
-                pygame.image.load("src\Images\portals\portal4.gif")
+                pygame.image.load(r"src\Images\portals\portal0.gif"),
+                pygame.image.load(r"src\Images\portals\portal1.gif"),
+                pygame.image.load(r"src\Images\portals\portal2.gif"),
+                pygame.image.load(r"src\Images\portals\portal3.gif"),
+                pygame.image.load(r"src\Images\portals\portal4.gif")
             ]
         except Exception:
             # fallback: two colored surfaces
