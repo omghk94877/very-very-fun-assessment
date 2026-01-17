@@ -782,7 +782,7 @@ class Blade(pygame.sprite.Sprite):
         self.owner = owner
         self.offset = offset
         # thin rectangle to look like a blade
-        self.image = pygame.image.load("src/Images/weapon/sword/obsidian/Obsidian_sword.png")
+        self.image = pygame.image.load("src/Images/weapon/sword/basic/Basic_sword.png").convert_alpha()
         self.image = pygame.transform.rotate(self.image, -90)
         self.image = pygame.transform.scale(self.image, (100, 35))
         facing = getattr(self.owner, 'facing', 'right')
