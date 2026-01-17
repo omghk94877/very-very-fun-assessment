@@ -394,6 +394,9 @@ class Main:
                         self.game_state.increment_death_count()
                         self.game_state.save()
                     self.game_over = True
+            
+            if self.player.rect.colliderect(self.portal.rect):
+                pass
 
     def check_shield_collision(self):
         shield = getattr(self.player.obsidian_blade, 'shield', None)
