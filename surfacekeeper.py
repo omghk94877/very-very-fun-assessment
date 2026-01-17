@@ -373,15 +373,46 @@ class VisualNovel(ScreenManager):
 
             # Draw name
             name_text = self.name_font.render(name, True, (255, 255, 255))
-            surface.blit(name_text, (50, self.app.size[1] - 150))
+            surface.blit(name_text, (50, self.app.size[1] - 170))
 
-            # Draw line
-            line_text = self.font.render(line, True, (255, 255, 255))
-            surface.blit(line_text, (50, self.app.size[1] - 100))
+            # Draw line with wrapping to avoid overflow
+            wrap_rect = pygame.Rect(50, self.app.size[1] - 140, self.app.size[0] - 100, 120)
+            self._render_text_block(surface, line, self.font, (255, 255, 255), wrap_rect)
 
             # Instruction
             instr = self.font.render("Press SPACE or ENTER to continue, ESC to menu", True, (200, 200, 200))
-            surface.blit(instr, (50, self.app.size[1] - 50))
+            surface.blit(instr, (50, self.app.size[1] - 30))
+
+    def _render_text_block(self, surface, text, font, color, rect, line_spacing=4):
+        """Render `text` inside `rect` with word-wrapping using `font`.
+
+        - `rect` is a pygame.Rect defining position and max width/height.
+        - Lines that don't fit vertically will be truncated.
+        """
+        words = text.split(' ')
+        space_width, space_height = font.size(' ')
+        x, y = rect.topleft
+        max_x = rect.right
+        line = ''
+        for word in words:
+            test_line = word if not line else f"{line} {word}"
+            test_width, _ = font.size(test_line)
+            if x + test_width <= max_x:
+                line = test_line
+            else:
+                # draw current line
+                if line:
+                    rendered = font.render(line, True, color)
+                    surface.blit(rendered, (x, y))
+                    y += rendered.get_height() + line_spacing
+                    if y > rect.bottom:
+                        return
+                line = word
+
+        # draw last line
+        if line and y <= rect.bottom:
+            rendered = font.render(line, True, color)
+            surface.blit(rendered, (x, y))
 
 
 class IntroScreen(VisualNovel):
