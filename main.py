@@ -9,28 +9,17 @@ import pygame
 import sprite
 import surfacekeeper
 
-class Main:
-    def __init__(self, size=(1000,600), screen=None, level=1, game_state=None, app=None):
-        if screen is None:
-            pygame.init()
-            self.screen = pygame.display.set_mode(size)
-            pygame.display.set_caption("Monster Smash - Game")
-            self.owns_display = True
-        else:
-            self.screen = screen
-            self.owns_display = False
-        
-        #D - Display configuration
-        self.size = size
+class Main(surfacekeeper.ScreenManager):
+    def __init__(self, app, level=1, game_state=None):
+        super().__init__(app)
         self.level = level
         self.game_state = game_state
-        self.app = app
+        self.screen = self.app.screen
+        self.clock = self.app.clock
+        self.size = self.app.size
         self.won = False
         #E - Entities
         self.entities()
-        #A - Action (broken into ALTER steps)
-        #A - Assign values to key variables
-        self.clock = pygame.time.Clock()
         #game state flag: when True, freeze most updates (allow death animation)
         self.game_over = False
         # respawn timer (ms). When game_over becomes True this is set and counts down.
@@ -41,11 +30,6 @@ class Main:
         # Font for UI
         self.font = pygame.font.SysFont(None, 36)
         self.weapon = 'basic'
-        #L - Loop
-        self.loop()
-        #Close the game window if we own it
-        if self.owns_display:
-            pygame.quit()
 
     def entities(self):
         # play a random background music file (if available)
@@ -396,7 +380,9 @@ class Main:
                     self.game_over = True
             
             if self.player.rect.colliderect(self.portal.rect):
-                pass
+                if self.game_state and self.game_state.level1_completed:
+                    import surfacekeeper
+                    self.app.change_screen(surfacekeeper.VisualNovel(self.app, "portal", previous_screen=self))
 
     def check_shield_collision(self):
         shield = getattr(self.player.obsidian_blade, 'shield', None)
