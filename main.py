@@ -109,7 +109,7 @@ class Main:
         # create boss and add to active sprites (boss is not added to `self.enemies`
         # so regular bullets/blades won't auto-delete it; we handle boss hits separately)
         # boss is added AFTER portal so it renders on top
-        if self.level == 1:
+        if self.level == 1 and not (self.game_state and self.game_state.level1_completed):
             self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=50)
             self.all_sprites.add(self.boss)
         elif self.level == 2:
@@ -319,7 +319,12 @@ class Main:
                     # bullet hitting boss: boss takes one hit (50 required to die)
                     if getattr(self, 'boss', None) is not None and spr.rect.colliderect(self.boss.rect):
                         # count a hit and remove bullet
-                        self.boss.take_hit()
+                        if self.boss.take_hit():
+                            # boss died, trigger level1_end story
+                            self.game_state.level1_completed = True
+                            self.game_state.save()
+                            import surfacekeeper
+                            self.app.change_screen(surfacekeeper.VisualNovel(self.app, "level1_end", previous_screen=self))
                         spr.kill()
      
             #Check collisions between blades and enemies: blades kill enemies on contact
@@ -331,7 +336,12 @@ class Main:
                         pass
                     # blade hitting boss
                     if getattr(self, 'boss', None) is not None and blade.rect.colliderect(self.boss.rect):
-                        self.boss.take_hit()
+                        if self.boss.take_hit():
+                            # boss died, trigger level1_end story
+                            self.game_state.level1_completed = True
+                            self.game_state.save()
+                            import surfacekeeper
+                            self.app.change_screen(surfacekeeper.VisualNovel(self.app, "level1_end", previous_screen=self))
      
             # projectiles from boss kill player on contact
             for spr in list(self.all_sprites.sprites()):

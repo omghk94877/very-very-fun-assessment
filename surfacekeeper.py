@@ -348,11 +348,12 @@ class MakeSave(ScreenManager, make_save.SaveSystem):
 
 
 class VisualNovel(ScreenManager):
-    def __init__(self, app, story_part="intro"):
+    def __init__(self, app, story_part="intro", previous_screen=None):
         super().__init__(app)
         self.font = pygame.font.SysFont(None, 24)
         self.name_font = pygame.font.SysFont(None, 28)
         self.story_part = story_part
+        self.previous_screen = previous_screen
         self.story_file = f"stories/{story_part}.json"
         self.story_data = load_json(self.story_file) or []
         self.current_index = 0
@@ -395,7 +396,10 @@ class VisualNovel(ScreenManager):
         if self.story_part == "intro":
             self.app.start_game(1)
         elif self.story_part == "level1_end":
-            self.app.start_game(1)
+            if self.previous_screen:
+                self.app.change_screen(self.previous_screen)
+            else:
+                self.app.start_game(1)
         elif self.story_part == "portal":
             self.app.start_game(2)
         else:
