@@ -122,16 +122,15 @@ class LogoScreen(ScreenManager):
     def __init__(self, app):
         super().__init__(app)
         # Randomly choose Logo_1 or Logo_2
-        logo_choice = random.choice(['Logo_1.png', 'Logo_2.png'])
-        try:
-            self.image = pygame.image.load(f"src/Images/intro/{logo_choice}").convert()
-            self.image = pygame.transform.scale(self.image, self.app.size)
-        except:
-            # Fallback
-            self.image = pygame.Surface(self.app.size)
-            self.image.fill((0, 0, 0))
-        self.alpha = 255
-        self.image.set_alpha(self.alpha)
+        logo_choice =['src\Images\Logo_1.png', 
+                      'src\Images\Logo_2.png']
+        
+        logo = random.choice(logo_choice)
+        
+        self.image = pygame.image.load(logo).convert_alpha()
+        self.image = pygame.transform.scale(self.image, self.app.size)
+        
+        # Initialize timer and fade parameters
         self.timer = 0
         self.display_duration = 3000  # 3 seconds
         self.fade_duration = 1000  # 1 second
