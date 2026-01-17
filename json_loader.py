@@ -9,8 +9,22 @@ def load_json(file_path):
         dict or list: Parsed JSON data.
     """
     try:
-        with open(file_path, 'r') as f:
-            content = f.read()
+        # Try UTF-8 first (common for project files). If the system default
+        # encoding is different (e.g. GBK on some Windows locales) a
+        # UnicodeDecodeError can occur — fall back to other encodings.
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+        except UnicodeDecodeError:
+            try:
+                # Some JSON files start with a BOM; try utf-8-sig
+                with open(file_path, 'r', encoding='utf-8-sig') as f:
+                    content = f.read()
+            except UnicodeDecodeError:
+                # Last resort: latin-1 will never fail to decode bytes, but
+                # may produce incorrect characters for non-latin text.
+                with open(file_path, 'r', encoding='latin-1') as f:
+                    content = f.read()
         return parse_json(content)
     except Exception as e:
         print(f"Error loading JSON: {e}")
@@ -135,7 +149,8 @@ def dump_json(data, file_path):
     """
     try:
         json_str = _to_json_string(data)
-        with open(file_path, 'w') as f:
+        # Write using UTF-8 to ensure consistent encoding across platforms
+        with open(file_path, 'w', encoding='utf-8') as f:
             f.write(json_str)
     except Exception as e:
         print(f"Error saving JSON: {e}")
