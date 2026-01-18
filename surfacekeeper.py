@@ -357,8 +357,8 @@ class VisualNovel(ScreenManager):
             else:
                 self.app.start_game_real(1)
         elif self.story_part == "portal":
-            # After the portal visual novel, go to main menu
-            self.app.change_screen(MainMenu(self.app))
+            # After the portal visual novel, show the end screen
+            self.app.change_screen(TheEndScreen(self.app))
         else:
             self.app.change_screen(MainMenu(self.app))
 
@@ -556,6 +556,37 @@ class UnderDevelopmentScreen(ScreenManager):
         title = self.font.render("Under development, please wait", True, (255, 220, 60))
         surface.blit(title, title.get_rect(center=(self.app.size[0]//2, self.app.size[1]//2 - 20)))
         self.back_button.draw(surface)
+
+
+class TheEndScreen(ScreenManager):
+    """Screen that shows the 'the_end' image and waits for key press to go to main menu."""
+    def __init__(self, app):
+        super().__init__(app)
+        self.image_path = r"src\Images\story\the_end.gif"
+        try:
+            self.image = pygame.image.load(self.image_path).convert_alpha()
+            self.image = pygame.transform.scale(self.image, self.app.size)
+        except:
+            self.image = None
+        self.font = pygame.font.SysFont(None, 24)
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                self.app.change_screen(MainMenu(self.app))
+
+    def draw(self, surface):
+        surface.fill((0, 0, 0))  # Black background
+        if self.image:
+            surface.blit(self.image, (0, 0))
+        else:
+            # Fallback if image fails to load
+            text = self.font.render("The End", True, (255, 255, 255))
+            surface.blit(text, text.get_rect(center=(self.app.size[0]//2, self.app.size[1]//2)))
+
+        # Instruction
+        instr = self.font.render("Press SPACE or ENTER to continue", True, (200, 200, 200))
+        surface.blit(instr, (50, self.app.size[1] - 30))
 
 
 class DeathCount(ScreenManager):
