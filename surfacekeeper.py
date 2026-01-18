@@ -357,7 +357,8 @@ class VisualNovel(ScreenManager):
             else:
                 self.app.start_game_real(1)
         elif self.story_part == "portal":
-            self.app.start_game_real(2)
+            # After the portal visual novel, show an under-development screen
+            self.app.change_screen(UnderDevelopmentScreen(self.app))
         else:
             self.app.change_screen(MainMenu(self.app))
 
@@ -530,6 +531,31 @@ class MakeWhiteScreem(ScreenManager):
 
     def draw(self, surface):
         surface.fill((255, 255, 255))
+
+
+class UnderDevelopmentScreen(ScreenManager):
+    """Simple screen that shows an 'under development' message and a button back to main menu."""
+    def __init__(self, app):
+        super().__init__(app)
+        self.font = pygame.font.SysFont(None, 36)
+        self.small = pygame.font.SysFont(None, 24)
+        w, h = app.size
+        btn_w, btn_h = 240, 48
+        cx = w // 2 - btn_w // 2
+        cy = h // 2 + 40
+        self.back_button = Button((cx, cy, btn_w, btn_h), "Back to Main Menu", self.back_to_menu, self.small)
+
+    def back_to_menu(self):
+        self.app.change_screen(MainMenu(self.app))
+
+    def handle_event(self, event):
+        self.back_button.handle_event(event)
+
+    def draw(self, surface):
+        surface.fill((18, 20, 28))
+        title = self.font.render("Under development, please wait", True, (255, 220, 60))
+        surface.blit(title, title.get_rect(center=(self.app.size[0]//2, self.app.size[1]//2 - 20)))
+        self.back_button.draw(surface)
 
 
 class DeathCount(ScreenManager):

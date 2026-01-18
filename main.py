@@ -86,14 +86,18 @@ class Main(surfacekeeper.ScreenManager):
             self.obstacles.add(rock)
             self.all_sprites.add(rock)
 
-        self.portal = sprite.Portal(self.player, self.background)
-        self.all_sprites.add(self.portal)
+        # Create portal only when appropriate. Skip portal in level 1 while
+        # the boss is still active (i.e., level1 not yet completed).
+        if self.level != 1 or (self.game_state and getattr(self.game_state, 'level1_completed', False)):
+            self.portal = sprite.Portal(self.player, self.background)
+            self.all_sprites.add(self.portal)
 
         #group to hold enemies
         self.enemies = pygame.sprite.Group()
         
-        # Spawn regular enemies (keep other enemies behavior unchanged)
-        for i in range(15):
+        # Spawn regular enemies (increase count on level 2)
+        enemy_count = 15 if self.level == 1 else 30
+        for i in range(enemy_count):
             enemy = sprite.Enemy(self.player, self.background)
             self.enemies.add(enemy)
             self.all_sprites.add(enemy)
@@ -181,7 +185,8 @@ class Main(surfacekeeper.ScreenManager):
                                     if self.player.obsidian_blade.cooldown <= 0:
                                         if self.player.obsidian_blade.use():
                                             self.all_sprites.add(self.player.obsidian_blade.shield)
-                                        return  # don't add blade if shield activated
+                                        # don't add blade if shield activated; continue processing events
+                                        continue
                                     else:
                                         blade = sprite.ObsidianBlade(self.player)
                                 self.all_sprites.add(blade)
@@ -195,7 +200,8 @@ class Main(surfacekeeper.ScreenManager):
                             if self.weapon == 'basic':
                                 self.weapon = 'flame'
                             elif self.weapon == 'flame':
-                                if self.game_state.level1_completed:
+                                # Allow obsidian if level1 completed OR we're on level 2
+                                if (self.game_state and getattr(self.game_state, 'level1_completed', False)) or self.level >= 2:
                                     self.weapon = 'obsidian'
                                 else:
                                     self.weapon = 'basic'
@@ -281,7 +287,7 @@ class Main(surfacekeeper.ScreenManager):
                 self.screen.blit(overlay, (0, 0))
                 # Menu text
                 resume_text = self.font.render("Resume (R)", True, (255, 255, 255))
-                quit_text = self.font.render("Quit (Q)", True, (255, 255, 255))
+                quit_text = self.font.render("Back to Menu (Q)", True, (255, 255, 255))
                 menu_title = self.font.render("Paused", True, (255, 255, 255))
                 self.screen.blit(menu_title, (self.size[0]//2 - menu_title.get_width()//2, self.size[1]//2 - 100))
                 self.screen.blit(resume_text, (self.size[0]//2 - resume_text.get_width()//2, self.size[1]//2 - 20))
@@ -305,8 +311,16 @@ class Main(surfacekeeper.ScreenManager):
             #Check collisions between bullets and enemies: bullets kill enemies on contact
             for spr in list(self.all_sprites.sprites()):
                 if isinstance(spr, (sprite.Bullet, sprite.BossBullet)):
-                    hit_enemies = pygame.sprite.spritecollide(spr, self.enemies, True)
+                    # don't auto-kill enemies; they may require multiple hits
+                    hit_enemies = pygame.sprite.spritecollide(spr, self.enemies, False)
                     if hit_enemies:
+                        for e in hit_enemies:
+                            try:
+                                dead = e.take_hit()
+                            except Exception:
+                                # fallback: remove enemy immediately
+                                e.kill()
+                                dead = True
                         spr.kill()
                     # bullet hitting boss: boss takes one hit (50 required to die)
                     if getattr(self, 'boss', None) is not None and spr.rect.colliderect(self.boss.rect):
@@ -324,8 +338,14 @@ class Main(surfacekeeper.ScreenManager):
             #Check collisions between blades and enemies: blades kill enemies on contact
             for blade in list(self.all_sprites.sprites()):
                 if isinstance(blade, (sprite.Blade, sprite.OtherBlade, sprite.ObsidianBlade)):
-                    hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, True)
+                    # blades should hit but not necessarily kill immediately
+                    hit_enemies = pygame.sprite.spritecollide(blade, self.enemies, False)
                     if hit_enemies:
+                        for e in hit_enemies:
+                            try:
+                                _ = e.take_hit()
+                            except Exception:
+                                e.kill()
                         # optionally keep blade alive until its timer; do not need to call blade.kill() here
                         pass
                     # blade hitting boss
@@ -350,7 +370,7 @@ class Main(surfacekeeper.ScreenManager):
                         self.game_over = True
                         return
                     
-            if self.player.rect.colliderect(self.portal.rect):
+            if getattr(self, 'portal', None) and self.player.rect.colliderect(self.portal.rect):
                 if self.level == 1:
                     if not self.game_state.level1_completed:
                         self.game_state.level1_completed = True
@@ -361,10 +381,9 @@ class Main(surfacekeeper.ScreenManager):
                         import surfacekeeper
                         self.app.change_screen(surfacekeeper.VisualNovel(self.app, "portal"))
                 elif self.level == 2:
-                    self.won = True
-                    self.game_state.save()
-                    self.game_over = True
-                    self.keepGoing = False
+                    # trigger portal visual novel; after VN the UnderDevelopmentScreen will be shown
+                    import surfacekeeper
+                    self.app.change_screen(surfacekeeper.VisualNovel(self.app, "portal", previous_screen=self))
 
 
             # blade cancels boss projectiles (blade destroys any boss fireball it touches)
@@ -384,7 +403,7 @@ class Main(surfacekeeper.ScreenManager):
                         self.game_state.save()
                     self.game_over = True
             
-            if self.player.rect.colliderect(self.portal.rect):
+            if getattr(self, 'portal', None) and self.player.rect.colliderect(self.portal.rect):
                 if self.game_state and self.game_state.level1_completed:
                     import surfacekeeper
                     self.app.change_screen(surfacekeeper.VisualNovel(self.app, "portal", previous_screen=self))

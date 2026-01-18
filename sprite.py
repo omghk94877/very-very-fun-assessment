@@ -196,6 +196,19 @@ class Player(pygame.sprite.Sprite):
 
         self.obsidian_blade.update(dt)
 
+    def take_hit(self):
+        """Register a hit on this enemy. Return True if enemy died."""
+        try:
+            self.hits += 1
+            if self.hits >= getattr(self, 'required_hits', 1):
+                self.kill()
+                return True
+            return False
+        except Exception:
+            # fallback: kill immediately
+            self.kill()
+            return True
+
 class Background(pygame.sprite.Sprite):
     def __init__(self, image, screen_width=1920):
         super().__init__()
@@ -292,7 +305,9 @@ class Enemy(pygame.sprite.Sprite):
             self.frames = self.frames_tree
             self.size = (80, 80)
 
-        # no HP — enemies die on first hit (bullets/blades kill immediately)
+        # Hit points: increase difficulty by requiring 2 hits to kill
+        self.required_hits = 2
+        self.hits = 0
 
         # frame timing
         self.frame_index = 0
@@ -1241,16 +1256,22 @@ class Shield(pygame.sprite.Sprite):
     def __init__(self, owner):
         super().__init__()
         self.owner = owner
-        # Try to load shield_active.gif, fallback to obsidian sword
+        # Prefer the effect shield image; fall back to other known locations
         try:
-            self.image = pygame.image.load(r"src\Images\shield_active.gif").convert_alpha()
+            self.image = pygame.image.load(r"src\Images\effect\sheild_active.gif").convert_alpha()
             self.image = pygame.transform.scale(self.image, (100, 100))
-        except:
-            self.image = pygame.image.load(r"src\Images\weapon\sword\obsidian\Obsidian_sword.png").convert_alpha()
-            self.image = pygame.transform.scale(self.image, (100, 100))
+        except Exception:
+            try:
+                # older path used previously
+                self.image = pygame.image.load(r"src\Images\shield_active.gif").convert_alpha()
+                self.image = pygame.transform.scale(self.image, (100, 100))
+            except Exception:
+                # final fallback to obsidian sword image
+                self.image = pygame.image.load(r"src\Images\weapon\sword\obsidian\Obsidian_sword.png").convert_alpha()
+                self.image = pygame.transform.scale(self.image, (100, 100))
         self.rect = self.image.get_rect(center=owner.rect.center)
         self.timer = 0
-        self.duration = 2000  # 2 seconds
+        self.duration = 1000  # 1 second (expire if it doesn't block)
         self.blocks_remaining = 1
 
     def update(self, dt):
