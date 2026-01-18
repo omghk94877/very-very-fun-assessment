@@ -51,6 +51,6 @@
         "name": "narrator",
         "line": "To be continued...",
         "sound": "to_be_continued.wav",
-        "background": "portal_bg.png"
+        "background": "the_end.png"
     }
 ]
