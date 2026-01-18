@@ -371,13 +371,13 @@ class Main(surfacekeeper.ScreenManager):
                         return
                     
             if getattr(self, 'portal', None) and self.player.rect.colliderect(self.portal.rect):
-                # Player touched the portal: save state and exit gameplay so
-                # App.start_game_real() will return to the main menu.
+                # Player touched the portal: save state and play portal story then go to main menu.
                 if self.game_state:
                     try:
                         self.game_state.save()
                     except Exception:
                         pass
+                self.next_action = ('visual_novel', 'portal')
                 self.keepGoing = False
                 return
 
@@ -400,12 +400,13 @@ class Main(surfacekeeper.ScreenManager):
                     self.game_over = True
             
             if getattr(self, 'portal', None) and self.player.rect.colliderect(self.portal.rect):
-                # Ensure touching portal always exits to main menu during gameplay.
+                # Ensure touching portal always plays portal story then goes to main menu during gameplay.
                 if self.game_state:
                     try:
                         self.game_state.save()
                     except Exception:
                         pass
+                self.next_action = ('visual_novel', 'portal')
                 self.keepGoing = False
                 return
 

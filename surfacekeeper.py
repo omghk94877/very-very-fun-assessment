@@ -357,8 +357,8 @@ class VisualNovel(ScreenManager):
             else:
                 self.app.start_game_real(1)
         elif self.story_part == "portal":
-            # After the portal visual novel, show an under-development screen
-            self.app.change_screen(UnderDevelopmentScreen(self.app))
+            # After the portal visual novel, go to main menu
+            self.app.change_screen(MainMenu(self.app))
         else:
             self.app.change_screen(MainMenu(self.app))
 

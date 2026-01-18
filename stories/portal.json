@@ -28,5 +28,29 @@
         "line": "I will destroy the stone and kill every monster there are…",
         "sound": "hero_resolve.wav",
         "background": "portal_bg.png"
+    },
+    {
+        "name": "Freyr",
+        "line": "good luck brave HERO_NAME, our hope is all on you",
+        "sound": "hero_resolve.wav",
+        "background": "portal_bg.png"
+    },
+    {
+        "name": "narrator",
+        "line": "the brave USER_NAME stepped into the portal, ready to face whatever challenges lay ahead.",
+        "sound": "portal_enter.wav",
+        "background": "portal_bg.png"
+    },
+    {
+        "name": "narrator",
+        "line": "As USER_NAME vanished into the portal, a sense of determination filled the air, signaling the beginning of an epic adventure to save their world.",
+        "sound": "portal_enter.wav",
+        "background": "portal_bg.png"
+    },
+    {
+        "name": "narrator",
+        "line": "To be continued...",
+        "sound": "to_be_continued.wav",
+        "background": "portal_bg.png"
     }
 ]
