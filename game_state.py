@@ -14,6 +14,7 @@ class GameState:
         self.death_count = 0
         self.level1_completed = False
         self.obsidian_unlocked = False
+        self.hard_mode = False
         self.save_system = SaveSystem()
     
     def increment_progress(self, amount):
@@ -31,7 +32,8 @@ class GameState:
             self.progress,
             self.death_count,
             self.level1_completed,
-            self.obsidian_unlocked
+            self.obsidian_unlocked,
+            self.hard_mode
         )
     
     def load(self, player_name):
@@ -43,6 +45,7 @@ class GameState:
             self.death_count = data["death_count"]
             self.level1_completed = data.get("level1_completed", False)
             self.obsidian_unlocked = data.get("obsidian_unlocked", False)
+            self.hard_mode = data.get("hard_mode", False)
             return True
         return False
     

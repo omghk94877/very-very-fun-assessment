@@ -269,7 +269,7 @@ class Background(pygame.sprite.Sprite):
 
 
 class Enemy(pygame.sprite.Sprite):
-    def __init__(self, player, background, screen_width=1920):
+    def __init__(self, player, background, screen_width=1920, hard_mode=False):
         super().__init__()
         self.player = player
         self.background = background
@@ -305,9 +305,11 @@ class Enemy(pygame.sprite.Sprite):
             self.frames = self.frames_tree
             self.size = (80, 80)
 
-        # Hit points: increase difficulty by requiring 2 hits to kill
-        self.required_hits = 2
+        # Hit points: set based on difficulty mode
+        self.required_hits = 2 if hard_mode else 1
         self.hits = 0
+        self.hit_cooldown = 0  # ms cooldown between hits
+
 
         # frame timing
         self.frame_index = 0
@@ -365,6 +367,7 @@ class Enemy(pygame.sprite.Sprite):
 
     def update(self, dt=0):
         self.frame_timer += dt
+        self.hit_cooldown = max(0, self.hit_cooldown - dt)
 
         if self.frame_timer >= self.frame_duration:
             self.frame_timer = 0
@@ -422,12 +425,24 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.y = self.world_y
 
 
+    def take_hit(self):
+        """Register a hit on this enemy. Return True if enemy died."""
+        if self.hit_cooldown > 0:
+            return False
+        self.hit_cooldown = 500  # 500ms cooldown between hits
+        self.hits += 1
+        if self.hits >= self.required_hits:
+            self.kill()
+            return True
+        return False
+
+
 class Boss(pygame.sprite.Sprite):
     """Stationary boss that sits near the end of the world and spits varied fireballs.
     Optional `all_sprites` group can be provided so the boss will add projectiles there.
     Boss must be hit `required_hits` times by blade/bullet to die (not instant).
     """
-    def __init__(self, player, background, screen_width=1920, all_sprites=None, required_hits=50):
+    def __init__(self, player, background, screen_width=1920, all_sprites=None, hard_mode=False):
         super().__init__()
         self.player = player
         self.background = background
@@ -475,8 +490,10 @@ class Boss(pygame.sprite.Sprite):
         self.speed = 0.0
 
         # hit requirement
-        self.required_hits = required_hits
+        self.required_hits = 100 if hard_mode else 50
         self.hits = 0
+        self.hit_cooldown = 0  # ms cooldown between hits
+
 
         # firing timers
         self.fire_timer = 0
@@ -486,6 +503,9 @@ class Boss(pygame.sprite.Sprite):
 
     def take_hit(self):
         """Called when bullet or blade hits the boss. Return True if boss died."""
+        if self.hit_cooldown > 0:
+            return False
+        self.hit_cooldown = 500  # 500ms cooldown between hits
         self.hits += 1
         if self.hits >= self.required_hits:
             self.kill()
@@ -507,6 +527,7 @@ class Boss(pygame.sprite.Sprite):
     def update(self, dt=0):
         # animation
         self.frame_timer += dt
+        self.hit_cooldown = max(0, self.hit_cooldown - dt)
         if self.frame_timer >= self.frame_duration:
             self.frame_timer = 0
             self.frame_index = (self.frame_index + 1) % len(self.frames)
@@ -890,8 +911,8 @@ class Bullet(pygame.sprite.Sprite):
             self.vx = -self.vx
 
         self.timer = 0
-        # Bullet lasts for 2 seconds
-        self.count_time = 2000
+        # Bullet lasts for 1 seconds
+        self.count_time = 1000
         # bullet damage
         self.damage = 15
 

@@ -97,8 +97,9 @@ class Main(surfacekeeper.ScreenManager):
         
         # Spawn regular enemies (increase count on level 2)
         enemy_count = 15 if self.level == 1 else 30
+        hard_mode = self.game_state.hard_mode if self.game_state else False
         for i in range(enemy_count):
-            enemy = sprite.Enemy(self.player, self.background)
+            enemy = sprite.Enemy(self.player, self.background, hard_mode=hard_mode)
             self.enemies.add(enemy)
             self.all_sprites.add(enemy)
         
@@ -106,11 +107,12 @@ class Main(surfacekeeper.ScreenManager):
         # so regular bullets/blades won't auto-delete it; we handle boss hits separately)
         # boss is added AFTER portal so it renders on top
         if self.level == 1 and not (self.game_state and self.game_state.level1_completed):
-            self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=50)
+            hard_mode = self.game_state.hard_mode if self.game_state else False
+            self.boss = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, hard_mode=hard_mode)
             self.all_sprites.add(self.boss)
         elif self.level == 2:
             # Mini bosses for level 2
-            self.mini_boss1 = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=12)  # 1/4 health
+            self.mini_boss1 = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, hard_mode=hard_mode)  # 1/4 health
             self.mini_boss1.rect.centerx = self.background.world_width // 4
             self.all_sprites.add(self.mini_boss1)
             self.mini_boss2 = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=25)  # Giant bat placeholder

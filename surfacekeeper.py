@@ -357,8 +357,8 @@ class VisualNovel(ScreenManager):
             else:
                 self.app.start_game_real(1)
         elif self.story_part == "portal":
-            # After the portal visual novel, show the end screen
-            self.app.change_screen(TheEndScreen(self.app))
+            # After the portal visual novel, ask for hard mode choice
+            self.app.change_screen(HardModeChoiceScreen(self.app))
         else:
             self.app.change_screen(MainMenu(self.app))
 
@@ -587,6 +587,45 @@ class TheEndScreen(ScreenManager):
         # Instruction
         instr = self.font.render("Press SPACE or ENTER to continue", True, (200, 200, 200))
         surface.blit(instr, (50, self.app.size[1] - 30))
+
+
+class HardModeChoiceScreen(ScreenManager):
+    """Screen that asks the player if they want to enable hard mode."""
+    def __init__(self, app):
+        super().__init__(app)
+        self.font = pygame.font.SysFont(None, 36)
+        self.small = pygame.font.SysFont(None, 24)
+        w, h = app.size
+        btn_w, btn_h = 200, 48
+        cx = w // 2 - btn_w // 2
+        cy = h // 2 + 40
+        self.yes_button = Button((cx - 120, cy, btn_w, btn_h), "Yes, Hard Mode", self.enable_hard_mode, self.small)
+        self.no_button = Button((cx + 120, cy, btn_w, btn_h), "No, Normal", self.disable_hard_mode, self.small)
+
+    def enable_hard_mode(self):
+        if self.app.game_state:
+            self.app.game_state.hard_mode = True
+            self.app.game_state.save()
+        self.app.start_game_real(1)
+
+    def disable_hard_mode(self):
+        if self.app.game_state:
+            self.app.game_state.hard_mode = False
+            self.app.game_state.save()
+        self.app.change_screen(TheEndScreen(self.app))
+
+    def handle_event(self, event):
+        self.yes_button.handle_event(event)
+        self.no_button.handle_event(event)
+
+    def draw(self, surface):
+        surface.fill((18, 20, 28))
+        title = self.font.render("Congratulations on completing the game!", True, (255, 220, 60))
+        surface.blit(title, title.get_rect(center=(self.app.size[0]//2, self.app.size[1]//2 - 60)))
+        subtitle = self.font.render("Enable Hard Mode? (Enemies take 2x hits)", True, (255, 220, 60))
+        surface.blit(subtitle, subtitle.get_rect(center=(self.app.size[0]//2, self.app.size[1]//2 - 20)))
+        self.yes_button.draw(surface)
+        self.no_button.draw(surface)
 
 
 class DeathCount(ScreenManager):
