@@ -468,8 +468,8 @@ class Boss(pygame.sprite.Sprite):
         # vertical position centered on player
         self.world_y = self.player.rect.centery - (self.image.get_height() // 2)
 
-        # onscreen rect
-        self.rect = self.image.get_rect(topleft=(self.world_x + self.background.rect.x, self.world_y))
+        # onscreen rect (include background vertical offset for consistent screen coords)
+        self.rect = self.image.get_rect(topleft=(int(self.world_x + self.background.rect.x), int(self.world_y + getattr(self.background.rect, 'y', 0))))
 
         # boss stationary (no world_x change)
         self.speed = 0.0
@@ -522,9 +522,9 @@ class Boss(pygame.sprite.Sprite):
             kind = random.choice(self._proj_choices)
             self._spawn_projectile(kind)
 
-        # ensure rect follows background offset
+        # ensure rect follows background offset (convert world -> screen coords)
         self.rect.x = int(self.world_x + self.background.rect.x)
-        self.rect.y = self.world_y
+        self.rect.y = int(self.world_y + getattr(self.background.rect, 'y', 0))
 
 
 class BigFireball(pygame.sprite.Sprite):
