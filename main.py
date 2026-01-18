@@ -371,19 +371,15 @@ class Main(surfacekeeper.ScreenManager):
                         return
                     
             if getattr(self, 'portal', None) and self.player.rect.colliderect(self.portal.rect):
-                if self.level == 1:
-                    if not self.game_state.level1_completed:
-                        self.game_state.level1_completed = True
+                # Player touched the portal: save state and exit gameplay so
+                # App.start_game_real() will return to the main menu.
+                if self.game_state:
+                    try:
                         self.game_state.save()
-                        import surfacekeeper
-                        self.app.change_screen(surfacekeeper.VisualNovel(self.app, "level1_end"))
-                    else:
-                        import surfacekeeper
-                        self.app.change_screen(surfacekeeper.VisualNovel(self.app, "portal"))
-                elif self.level == 2:
-                    # trigger portal visual novel; after VN the UnderDevelopmentScreen will be shown
-                    import surfacekeeper
-                    self.app.change_screen(surfacekeeper.VisualNovel(self.app, "portal", previous_screen=self))
+                    except Exception:
+                        pass
+                self.keepGoing = False
+                return
 
 
             # blade cancels boss projectiles (blade destroys any boss fireball it touches)
@@ -404,9 +400,14 @@ class Main(surfacekeeper.ScreenManager):
                     self.game_over = True
             
             if getattr(self, 'portal', None) and self.player.rect.colliderect(self.portal.rect):
-                if self.game_state and self.game_state.level1_completed:
-                    import surfacekeeper
-                    self.app.change_screen(surfacekeeper.VisualNovel(self.app, "portal", previous_screen=self))
+                # Ensure touching portal always exits to main menu during gameplay.
+                if self.game_state:
+                    try:
+                        self.game_state.save()
+                    except Exception:
+                        pass
+                self.keepGoing = False
+                return
 
     def check_shield_collision(self):
         shield = getattr(self.player.obsidian_blade, 'shield', None)
