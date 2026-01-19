@@ -345,7 +345,7 @@ class Main(surfacekeeper.ScreenManager):
             # Draw arrow reload countdown
             if self.reload_timer > 0:
                 countdown_seconds = int(self.reload_timer / 1000) + 1  # round up
-                reload_text = f"Reload: {countdown_seconds}s"
+                reload_text = f"Arrow Reloading: {countdown_seconds}s"
                 reload_surf = self.font.render(reload_text, True, (255, 255, 0))
                 # Top right
                 self.screen.blit(reload_surf, (self.size[0] - reload_surf.get_width() - 10, 10))

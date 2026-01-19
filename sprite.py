@@ -1022,6 +1022,7 @@ class Intro(pygame.sprite.Sprite):
             "Root and bat monsters will approach toward you if u get too close.",
             "Be careful, some monsters disguise into a TREE.",
             "Dodge the fireballs carefully.",
+            "Arrow might need some time to reload if you use it too frequently.",
             "if you see the boss, try your best to kill it!",
             "Good luck on your adventure!"
         ]
