@@ -10,6 +10,12 @@ import sprite
 import surfacekeeper
 
 class Main(surfacekeeper.ScreenManager):
+    """
+    This class manages the main gameplay screen, including player movement,
+    enemy interactions, and level progression.
+    
+    """
+
     def __init__(self, app, level=1, game_state=None):
         super().__init__(app)
         self.level = level
@@ -82,7 +88,7 @@ class Main(surfacekeeper.ScreenManager):
             for _ in range(count):
                 obstacle = ObstacleClass(background, player=player)
                 # Keep regenerating until we find a spot that doesn't overlap with existing obstacles
-                max_attempts = 20
+                max_attempts = 40
                 attempts = 0
                 while attempts < max_attempts:
                     # Check if too close to portal
