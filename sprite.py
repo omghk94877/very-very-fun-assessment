@@ -439,30 +439,7 @@ class Enemy(pygame.sprite.Sprite):
         except Exception:
             pass
 
-        # boss firing behavior (boss stationary but fires when player in range)
-        """if self.enemy_type == 2:
-            # ensure attributes exist (defensive)
-            if not hasattr(self, 'fire_timer'):
-                self.fire_timer = 0
-            if not hasattr(self, 'fire_cooldown'):
-                self.fire_cooldown = 1500
-            if not hasattr(self, 'fire_radius'):
-                self.fire_radius = 400
-            # advance fire timer
-            self.fire_timer += dt
-            try:
-                player_world_x = self.player.rect.x - self.background.rect.x
-                dx = player_world_x - self.world_x
-                if abs(dx) <= self.fire_radius and self.fire_timer >= self.fire_cooldown:
-                    # spawn a boss projectile (larger/higher damage)
-                    if self.all_sprites is not None:
-                        proj = BossBullet(self)
-                        self.all_sprites.add(proj)
-                    self.fire_timer = 0
-            except Exception:
-                pass"""
-
-        # no health bar logic (enemies are removed on hit)
+       
         # update onscreen rect from world coords (existing)
         self.rect.x = int(self.world_x + self.background.rect.x)
         self.rect.y = self.world_y
