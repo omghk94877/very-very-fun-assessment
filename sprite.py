@@ -1,5 +1,10 @@
 import pygame
 import random
+"""
+This module defines the sprite classes for the game, including Player, Background, Enemy, Boss, and various projectile types.
+It handles player animations, enemy behaviors, projectile mechanics, and background movement.
+
+"""
 
 class Player(pygame.sprite.Sprite):
     """
@@ -8,6 +13,10 @@ class Player(pygame.sprite.Sprite):
     """
 
     def __init__(self):
+        """
+        Initializes the player sprite with animations, sounds, and physics properties.
+        
+        """
         pygame.sprite.Sprite.__init__(self)
         #setting sound effect for player
         self.die_sound = pygame.mixer.Sound("src/Sounds/die.wav")
@@ -46,6 +55,7 @@ class Player(pygame.sprite.Sprite):
         def _scale_list(frames, size=(60, 100)):
             return [pygame.transform.scale(f, size) for f in frames]
 
+        # scale all animations
         self.stand = _scale_list(self.stand)
         self.move_l = _scale_list(self.move_l)
         self.move_r = _scale_list(self.move_r)
@@ -64,6 +74,7 @@ class Player(pygame.sprite.Sprite):
             'die': self.die,
         }
 
+        # initial animation state
         self.current_anim = 'stand'
         self.frame_index = 0
         self.frame_timer = 0
@@ -91,18 +102,30 @@ class Player(pygame.sprite.Sprite):
         self.obsidian_blade = ObsidianAbility(self)
 
     def move_left(self):
+        """
+        Moves the player to the left.
+        change the animation to left-walk
+        """
         # switch to left-walk animation
         self.set_animation('move_l')
         self.facing = 'left'
         # no direct horizontal movement of the player; background scrolls instead
 
     def move_right(self):
+        """
+        moves the player to the right.
+        change the animation to right-walk
+        """
         # switch to right-walk animation
         self.set_animation('move_r')
         self.facing = 'right'
         # no direct horizontal movement of the player; background scrolls instead
 
     def move_up(self):
+        """
+        Jumps the player upward.
+        play the sound effect
+        """
         # jump only when on ground
         if not self.on_ground:
             return
@@ -119,6 +142,9 @@ class Player(pygame.sprite.Sprite):
         
 
     def death(self):
+        """
+        Player the death animation and sound.
+        """
         self.die_sound.play()
         self.set_animation('die')
         # don't kill the sprite here; animation/state can handle further logic
@@ -151,6 +177,10 @@ class Player(pygame.sprite.Sprite):
         
 
     def update(self, dt=0):
+        """
+        Update the player sprite.
+        dt: time delta in milliseconds since last update
+        """
         # advance animation frames
         if dt:
             self.frame_timer += dt
@@ -210,7 +240,15 @@ class Player(pygame.sprite.Sprite):
             return True
 
 class Background(pygame.sprite.Sprite):
+    """Represents the scrolling background in the game. The background moves left/right in response to player movement,
+    and enforces boundaries to prevent scrolling beyond the level limits.
+    """
     def __init__(self, image, screen_width=1920):
+        """
+        This method initializes the Background sprite with the given image and screen width.
+        image: pygame.Surface representing the background image
+        screen_width: width of the game screen in pixels
+        """
         super().__init__()
 
         #background, get from the parameter from main
@@ -269,6 +307,10 @@ class Background(pygame.sprite.Sprite):
 
 
 class Enemy(pygame.sprite.Sprite):
+    """
+    This class represents a basic enemy that spawns in the game world.
+    Enemies can chase the player when within a certain radius and require a set number of hits to be defeated.
+    """
     def __init__(self, player, background, screen_width=1920, hard_mode=False):
         super().__init__()
         self.player = player

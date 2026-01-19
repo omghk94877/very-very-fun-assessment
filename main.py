@@ -10,13 +10,15 @@ import sprite
 import surfacekeeper
 
 class Main(surfacekeeper.ScreenManager):
-    """
-    This class manages the main gameplay screen, including player movement,
-    enemy interactions, and level progression.
-    
-    """
-
     def __init__(self, app, level=1, game_state=None):
+        """
+        This method takes app, game_state and level as parameters.
+        Initializes the main game screen with entities, background music, and game state.
+        app (surfacekeeper.App): The main application instance.
+        level (int): The game level to initialize (default is 1).
+        game_state: The current game state object (default is None).
+
+        """
         super().__init__(app)
         self.level = level
         self.game_state = game_state
@@ -40,6 +42,10 @@ class Main(surfacekeeper.ScreenManager):
         self.weapon = 'basic'
 
     def entities(self):
+        """
+        This method initializes game entities, background music, and obstacles.
+        It sets up the game environment based on the current level and game state.
+        """
         # play a random background music file (if available)
         bgm_files = [
             "src/Sounds/8bitsong.wav",
@@ -48,17 +54,14 @@ class Main(surfacekeeper.ScreenManager):
             "src/Sounds/music3.mp3"
         ]
        
+       #adding background music
         pygame.mixer.init()
         self.bgm = random.choice(bgm_files)
         self.music = pygame.mixer.music.load(self.bgm)
         pygame.mixer.music.play(-1)
         pygame.mixer.music.set_volume(0.2)
         
-        
-
-        
-        
-
+        #load and scale background image
         background_image = pygame.image.load("src/Images/map/Battleground1.png")
         background_image = pygame.transform.scale(background_image, (10000, 600))
         
@@ -88,7 +91,7 @@ class Main(surfacekeeper.ScreenManager):
             for _ in range(count):
                 obstacle = ObstacleClass(background, player=player)
                 # Keep regenerating until we find a spot that doesn't overlap with existing obstacles
-                max_attempts = 40
+                max_attempts = 20
                 attempts = 0
                 while attempts < max_attempts:
                     # Check if too close to portal
@@ -168,6 +171,10 @@ class Main(surfacekeeper.ScreenManager):
         self.player.weapon = self.weapon
 
     def loop(self):
+        """
+        This method runs the main game loop. It handles events, updates game state, and renders the screen.
+
+        """
         self.keepGoing = True
         while self.keepGoing:
             #T - Timer to set the frame rate, dt in milliseconds
@@ -250,6 +257,10 @@ class Main(surfacekeeper.ScreenManager):
             self.handle_input(dt)
 
     def handle_input(self, dt):
+            """
+            This method handles continuous input for movement and actions.
+            dt (int): Delta time in milliseconds since last frame.
+            """
             #continuous input handling (handles holding keys, including in-air horizontal control)
             keys = pygame.key.get_pressed()
             if not self.game_over and not self.paused and keys[pygame.K_a]:
@@ -331,6 +342,10 @@ class Main(surfacekeeper.ScreenManager):
             
 
     def check_collision(self):
+            """
+            This method checks for collisions between the player, enemies, obstacles, and projectiles.
+            It handles the effects of these collisions, such as player death, enemy damage, and level completion.
+            """
             #collision handling only (drawing done by caller)
             for i in self.obstacles:
                 # Only spikes kill the player; rocks are harmless
@@ -446,6 +461,10 @@ class Main(surfacekeeper.ScreenManager):
                 return
 
     def check_shield_collision(self):
+        """
+        This method checks for collisions between the obsidian shield and incoming projectiles.
+        If a collision is detected, the shield blocks the attack and the projectile is destroyed.
+        """
         shield = getattr(self.player.obsidian_blade, 'shield', None)
         if shield and shield.alive():
             projectiles = [s for s in self.all_sprites.sprites() if isinstance(s, (sprite.Bullet, sprite.BossBullet, sprite.SmallFireball, sprite.BigFireball, sprite.TracingFireball))]
