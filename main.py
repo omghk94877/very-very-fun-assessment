@@ -161,7 +161,7 @@ class Main(surfacekeeper.ScreenManager):
             self.mini_boss1 = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, hard_mode=hard_mode)  # 1/4 health
             self.mini_boss1.rect.centerx = self.background.world_width // 4
             self.all_sprites.add(self.mini_boss1)
-            self.mini_boss2 = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=25)  # Giant bat placeholder
+            self.mini_boss2 = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=20)  # Giant bat placeholder
             self.mini_boss2.rect.centerx = 3 * self.background.world_width // 4
             self.all_sprites.add(self.mini_boss2)
 
