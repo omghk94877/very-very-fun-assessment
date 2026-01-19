@@ -40,6 +40,10 @@ class Main(surfacekeeper.ScreenManager):
         # Font for UI
         self.font = pygame.font.SysFont(None, 36)
         self.weapon = 'basic'
+        # Arrow limit variables
+        self.arrow_count = 0
+        self.max_arrows = random.randint(6, 12)
+        self.reload_timer = 0  # in ms
 
     def entities(self):
         """
@@ -62,7 +66,8 @@ class Main(surfacekeeper.ScreenManager):
         pygame.mixer.music.set_volume(0.2)
         
         #load and scale background image
-        background_image = pygame.image.load("src/Images/map/Battleground1.png")
+        bg_name = "Battleground2.png" if self.level == 2 else "Battleground1.png"
+        background_image = pygame.image.load(f"src/Images/map/{bg_name}")
         background_image = pygame.transform.scale(background_image, (10000, 600))
         
         #Create background sprite for scrolling effect
@@ -169,6 +174,10 @@ class Main(surfacekeeper.ScreenManager):
         #currently equipped weapon: 'flame' or 'obsidian'
         self.weapon = 'flame'
         self.player.weapon = self.weapon
+        # Reset arrow variables
+        self.arrow_count = 0
+        self.max_arrows = random.randint(6, 12)
+        self.reload_timer = 0
 
     def loop(self):
         """
@@ -178,7 +187,10 @@ class Main(surfacekeeper.ScreenManager):
         self.keepGoing = True
         while self.keepGoing:
             #T - Timer to set the frame rate, dt in milliseconds
-            dt = self.clock.tick(30)    
+            dt = self.clock.tick(30)
+            # Update reload timer
+            if self.reload_timer > 0:
+                self.reload_timer -= dt
             #E - Event handling
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -232,8 +244,14 @@ class Main(surfacekeeper.ScreenManager):
                                         blade = sprite.ObsidianBlade(self.player)
                                 self.all_sprites.add(blade)
                         elif event.key == pygame.K_q:
-                            bullet = sprite.Bullet(self.player)
-                            self.all_sprites.add(bullet)
+                            if self.reload_timer <= 0 and self.arrow_count < self.max_arrows:
+                                bullet = sprite.Bullet(self.player)
+                                self.all_sprites.add(bullet)
+                                self.arrow_count += 1
+                                if self.arrow_count >= self.max_arrows:
+                                    self.reload_timer = random.randint(12, 40) * 1000  # seconds to ms
+                                    self.arrow_count = 0
+                                    self.max_arrows = random.randint(6, 12)
                         elif event.key == pygame.K_SPACE:
                             self.intro.next_line()
                         elif event.key == pygame.K_c:
@@ -323,6 +341,14 @@ class Main(surfacekeeper.ScreenManager):
                 cooldown_text = "Ability Cooldown"
                 cooldown_surf = self.font.render(cooldown_text, True, (255, 0, 0))
                 self.screen.blit(cooldown_surf, (10, 40))
+
+            # Draw arrow reload countdown
+            if self.reload_timer > 0:
+                countdown_seconds = int(self.reload_timer / 1000) + 1  # round up
+                reload_text = f"Reload: {countdown_seconds}s"
+                reload_surf = self.font.render(reload_text, True, (255, 255, 0))
+                # Top right
+                self.screen.blit(reload_surf, (self.size[0] - reload_surf.get_width() - 10, 10))
 
             # Draw pause menu
             if self.paused:
