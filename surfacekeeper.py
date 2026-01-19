@@ -254,7 +254,8 @@ class ShowIntro(ScreenManager):
             "src/Images/intro/intro-3.png",
             "src/Images/intro/intro-4.png",
             "src/Images/intro/intro-5.png",
-            "src/Images/intro/intro-6.png"
+            "src/Images/intro/intro-6.png",
+            "src/Images/intro/intro-7.png",
         ]
 
         self.intro_images = []
