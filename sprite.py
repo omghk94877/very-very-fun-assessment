@@ -931,7 +931,7 @@ class Bullet(pygame.sprite.Sprite):
             self.vx = -self.vx
 
         self.timer = 0
-        # Bullet lasts for 1 seconds
+        # Bullet lasts for 2 seconds
         self.count_time = 2000
         # bullet damage
         self.damage = 15

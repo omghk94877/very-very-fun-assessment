@@ -301,7 +301,7 @@ class ShowIntro(ScreenManager):
 
 
 class VisualNovel(ScreenManager):
-    def __init__(self, app, story_part="intro", previous_screen=None):
+    def __init__(self, app, story_part="intro", previous_screen=None, story_index=0):
         super().__init__(app)
         self.font = pygame.font.SysFont(None, 24)
         self.name_font = pygame.font.SysFont(None, 28)
@@ -309,7 +309,7 @@ class VisualNovel(ScreenManager):
         self.previous_screen = previous_screen
         self.story_file = f"stories/{story_part}.json"
         self.story_data = load_json(self.story_file) or []
-        self.current_index = 0
+        self.current_index = story_index
         self.background = None
         self.load_current_background()
         pygame.mixer.init()  # Ensure mixer is initialized
@@ -340,6 +340,10 @@ class VisualNovel(ScreenManager):
             except:
                 pass  # No sound or error
             self.current_index += 1
+            # Update story index in game state
+            if self.app.game_state:
+                self.app.game_state.story_index = self.current_index
+                self.app.game_state.save()
             self.load_current_background()
         else:
             # End of story, go to next
@@ -347,20 +351,35 @@ class VisualNovel(ScreenManager):
 
     def on_story_end(self):
         if self.story_part == "intro":
+            if self.app.game_state:
+                self.app.game_state.story_state = None
+                self.app.game_state.save()
             self.app.start_game_real(1)
         elif self.story_part == "boss_defeat":
             # After boss defeat story, start level 1 again — since
             # `game_state.level1_completed` is already set, the boss won't respawn.
+            if self.app.game_state:
+                self.app.game_state.story_state = None
+                self.app.game_state.save()
             self.app.start_game_real(1)
         elif self.story_part == "level1_end":
+            if self.app.game_state:
+                self.app.game_state.story_state = None
+                self.app.game_state.save()
             if self.previous_screen:
                 self.app.change_screen(self.previous_screen)
             else:
                 self.app.start_game_real(1)
         elif self.story_part == "portal":
             # After the portal visual novel, ask for hard mode choice
+            if self.app.game_state:
+                self.app.game_state.story_state = None
+                self.app.game_state.save()
             self.app.change_screen(HardModeChoiceScreen(self.app))
         else:
+            if self.app.game_state:
+                self.app.game_state.story_state = None
+                self.app.game_state.save()
             self.app.change_screen(MainMenu(self.app))
 
     def draw(self, surface):
@@ -464,7 +483,12 @@ class MakeSave(ScreenManager, make_save.SaveSystem):
                 try:
                     player_name = self.save_list[self.selected_index].replace('_save.json', '')
                     if self.app.game_state.load(player_name):
-                        self.app.start_game(1)
+                        # Check story state - if set, play the saved story
+                        if self.app.game_state.story_state:
+                            self.app.change_screen(VisualNovel(self.app, self.app.game_state.story_state, story_index=self.app.game_state.story_index))
+                        else:
+                            # Start game at saved level
+                            self.app.start_game_real(self.app.game_state.level)
                 except:
                     pass
 
@@ -686,6 +710,10 @@ class App:
         if action and action[0] == 'visual_novel':
             # action format: ('visual_novel', story_name)
             _, story_name = action
+            if self.game_state:
+                self.game_state.story_state = story_name
+                self.game_state.story_index = 0
+                self.game_state.save()
             self.change_screen(VisualNovel(self, story_name))
         else:
             # Default: return to main menu

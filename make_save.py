@@ -21,7 +21,7 @@ class SaveSystem:
         safe_name = "".join(c if c.isalnum() or c in (' ', '_', '-') else '_' for c in player_name)
         return os.path.join(self.save_dir, f"{safe_name}_save.json")
     
-    def save_game(self, player_name, progress, death_count, level1_completed=False, obsidian_unlocked=False, hard_mode=False):
+    def save_game(self, player_name, progress, death_count, level=1, story_state="intro", story_index=0, level1_completed=False, obsidian_unlocked=False, hard_mode=False):
         """
         Save the game state to a JSON file.
         
@@ -29,6 +29,9 @@ class SaveSystem:
             player_name (str): The name of the player
             progress (int/float): Current progress (distance, level, etc.)
             death_count (int): Number of deaths
+            level (int): Current level
+            story_state (str): Current story state
+            story_index (int): Current index in the story
             level1_completed (bool): Whether level 1 is completed
             obsidian_unlocked (bool): Whether obsidian sword is unlocked
             hard_mode (bool): Whether hard mode is enabled
@@ -41,6 +44,9 @@ class SaveSystem:
                 "player_name": player_name,
                 "progress": progress,
                 "death_count": death_count,
+                "level": level,
+                "story_state": story_state,
+                "story_index": story_index,
                 "level1_completed": level1_completed,
                 "obsidian_unlocked": obsidian_unlocked,
                 "hard_mode": hard_mode

@@ -22,6 +22,8 @@ class Main(surfacekeeper.ScreenManager):
         super().__init__(app)
         self.level = level
         self.game_state = game_state
+        if self.game_state:
+            self.game_state.level = level
         self.screen = self.app.screen
         self.clock = self.app.clock
         self.size = self.app.size
@@ -408,6 +410,8 @@ class Main(surfacekeeper.ScreenManager):
                                 self.game_state.save()
                             # request visual novel 'boss_defeat' to play after loop
                             self.next_action = ('visual_novel', 'boss_defeat')
+                            if self.game_state:
+                                self.game_state.story_state = 'boss_defeat'
                             self.keepGoing = False
                         spr.kill()
      
@@ -432,6 +436,8 @@ class Main(surfacekeeper.ScreenManager):
                                 self.game_state.level1_completed = True
                                 self.game_state.save()
                             self.next_action = ('visual_novel', 'boss_defeat')
+                            if self.game_state:
+                                self.game_state.story_state = 'boss_defeat'
                             self.keepGoing = False
      
             # projectiles from boss kill player on contact
@@ -454,6 +460,8 @@ class Main(surfacekeeper.ScreenManager):
                     except Exception:
                         pass
                 self.next_action = ('visual_novel', 'portal')
+                if self.game_state:
+                    self.game_state.story_state = 'portal'
                 self.keepGoing = False
                 return
 
@@ -483,6 +491,8 @@ class Main(surfacekeeper.ScreenManager):
                     except Exception:
                         pass
                 self.next_action = ('visual_novel', 'portal')
+                if self.game_state:
+                    self.game_state.story_state = 'portal'
                 self.keepGoing = False
                 return
 
