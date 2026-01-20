@@ -300,7 +300,7 @@ class Main(surfacekeeper.ScreenManager):
             if not self.game_over and not self.paused:
                 #normal gameplay: update everything and check collisions
                 self.all_sprites.update(dt)
-                #self.check_collision()
+                self.check_collision()
                 self.check_shield_collision()
             elif self.game_over:
                 #freeze everything except allow the player's death animation to advance
