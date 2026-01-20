@@ -161,7 +161,7 @@ class Main(surfacekeeper.ScreenManager):
             self.mini_boss1 = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, hard_mode=hard_mode)  # 1/4 health
             self.mini_boss1.rect.centerx = self.background.world_width // 4
             self.all_sprites.add(self.mini_boss1)
-            self.mini_boss2 = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=20)  # Giant bat placeholder
+            self.mini_boss2 = sprite.Boss(self.player, self.background, all_sprites=self.all_sprites, required_hits=10)  # Giant bat placeholder
             self.mini_boss2.rect.centerx = 3 * self.background.world_width // 4
             self.all_sprites.add(self.mini_boss2)
 
@@ -176,7 +176,7 @@ class Main(surfacekeeper.ScreenManager):
         self.player.weapon = self.weapon
         # Reset arrow variables
         self.arrow_count = 0
-        self.max_arrows = random.randint(6, 12)
+        self.max_arrows = random.randint(10, 30)
         self.reload_timer = 0
 
     def loop(self):
@@ -249,9 +249,9 @@ class Main(surfacekeeper.ScreenManager):
                                 self.all_sprites.add(bullet)
                                 self.arrow_count += 1
                                 if self.arrow_count >= self.max_arrows:
-                                    self.reload_timer = random.randint(12, 40) * 1000  # seconds to ms
+                                    self.reload_timer = random.randint(5, 10) * 1000  # seconds to ms
                                     self.arrow_count = 0
-                                    self.max_arrows = random.randint(6, 12)
+                                    self.max_arrows = random.randint(10, 30)
                         elif event.key == pygame.K_SPACE:
                             self.intro.next_line()
                         elif event.key == pygame.K_c:
@@ -300,7 +300,7 @@ class Main(surfacekeeper.ScreenManager):
             if not self.game_over and not self.paused:
                 #normal gameplay: update everything and check collisions
                 self.all_sprites.update(dt)
-                self.check_collision()
+                #self.check_collision()
                 self.check_shield_collision()
             elif self.game_over:
                 #freeze everything except allow the player's death animation to advance
@@ -398,7 +398,7 @@ class Main(surfacekeeper.ScreenManager):
                                 e.kill()
                                 dead = True
                         spr.kill()
-                    # bullet hitting boss: boss takes one hit (50 required to die)
+                    # bullet hitting boss: boss takes one hit ( required to die)
                     if getattr(self, 'boss', None) is not None and spr.rect.colliderect(self.boss.rect):
                         # count a hit and remove bullet
                         if self.boss.take_hit():

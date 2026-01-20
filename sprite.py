@@ -510,7 +510,7 @@ class Boss(pygame.sprite.Sprite):
         self.speed = 0.0
 
         # hit requirement
-        self.required_hits = 100 if hard_mode else 50
+        self.required_hits = 50 if hard_mode else 20
         self.hits = 0
         self.hit_cooldown = 0  # ms cooldown between hits
 
