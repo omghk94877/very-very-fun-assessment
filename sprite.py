@@ -48,6 +48,11 @@ class Player(pygame.sprite.Sprite):
                     pygame.image.load("src/Images/player_animation/death3.gif"),
             ]
 
+        # Load damaged animations
+        self.damaged_front = [pygame.image.load("src/Images/player_animation/damaged_front.png")]
+        self.damaged_left = [pygame.image.load("src/Images/player_animation/damaged_left.png")]
+        self.damaged_right = [pygame.image.load("src/Images/player_animation/damaged_right.png")]
+
         self.jump = [jump_surf]
         self.attack_img = [attack_surf]
 
@@ -63,6 +68,10 @@ class Player(pygame.sprite.Sprite):
         # attack uses a slightly different size
         self.attack_img = _scale_list(self.attack_img, (60, 40))
         self.die = _scale_list(self.die)
+        # Scale damaged animations to match player size (60x100)
+        self.damaged_front = _scale_list(self.damaged_front)
+        self.damaged_left = _scale_list(self.damaged_left)
+        self.damaged_right = _scale_list(self.damaged_right)
 
         # animation mapping and runtime state
         self.animations = {
@@ -72,6 +81,9 @@ class Player(pygame.sprite.Sprite):
             'jump': self.jump,
             'attack': self.attack_img,
             'die': self.die,
+            'damaged_front': self.damaged_front,
+            'damaged_left': self.damaged_left,
+            'damaged_right': self.damaged_right,
         }
 
         # initial animation state
@@ -98,6 +110,17 @@ class Player(pygame.sprite.Sprite):
         self.on_ground = True
         # ground y coordinate (pixels) - should be set by caller after positioning player
         self.ground_y = None
+
+        # Health system
+        self.health = 100
+        # Collision cooldown to prevent rapid repeated damage from same source
+        self.damage_cooldown = 0
+        self.damage_cooldown_duration = 500  # ms between damage hits
+        # Damaged animation state
+        self.is_damaged = False
+        self.damage_anim_timer = 0
+        self.damage_anim_duration = 500  # 0.5 seconds
+        self.prev_anim = None  # Store previous animation to restore after damage
 
         self.obsidian_blade = ObsidianAbility(self)
 
@@ -148,6 +171,30 @@ class Player(pygame.sprite.Sprite):
         self.die_sound.play()
         self.set_animation('die')
         # don't kill the sprite here; animation/state can handle further logic
+        # Stop damaged animation when dying
+        self.is_damaged = False
+
+    def show_damaged(self):
+        """
+        Show damaged animation based on player's current facing direction.
+        damaged_left when facing left (moving with 'a')
+        damaged_right when facing right (moving with 'd')
+        damaged_front otherwise
+        """
+        if self.current_anim == 'die':  # Don't show damaged if already dying
+            return
+        
+        self.is_damaged = True
+        self.damage_anim_timer = 0
+        self.prev_anim = self.current_anim
+        
+        # Play appropriate damaged animation based on facing direction
+        if self.facing == 'left':
+            self.set_animation('damaged_left')
+        elif self.facing == 'right':
+            self.set_animation('damaged_right')
+        else:  # default/front
+            self.set_animation('damaged_front')
         
 
     def attack(self):
@@ -181,6 +228,19 @@ class Player(pygame.sprite.Sprite):
         Update the player sprite.
         dt: time delta in milliseconds since last update
         """
+        # Update damage cooldown
+        if dt and self.damage_cooldown > 0:
+            self.damage_cooldown -= dt
+        
+        # Update damaged animation timer
+        if dt and self.is_damaged:
+            self.damage_anim_timer += dt
+            if self.damage_anim_timer >= self.damage_anim_duration:
+                # Damaged animation duration is up, restore previous animation
+                self.is_damaged = False
+                if self.prev_anim and self.current_anim != 'die':
+                    self.set_animation(self.prev_anim)
+        
         # advance animation frames
         if dt:
             self.frame_timer += dt
@@ -238,6 +298,47 @@ class Player(pygame.sprite.Sprite):
             # fallback: kill immediately
             self.kill()
             return True
+
+
+class DamagedPlayer(pygame.sprite.Sprite):
+    """Displays a damaged player sprite for a short duration when the player takes damage."""
+    def __init__(self, player, duration=1000):
+        """
+        Create a damaged player overlay sprite.
+        player: the Player sprite instance
+        duration: how long to display the damage sprite (ms)
+        """
+        super().__init__()
+        self.player = player
+        self.timer = 0
+        self.duration = duration  # 1 second
+        
+        # Load the damaged player image based on facing direction
+        try:
+            if player.facing == 'right':
+                self.image = pygame.image.load("src/Images/player_animation/frame_03_delay-0.08s.gif")
+            else:  # facing left
+                self.image = pygame.image.load("src/Images/player_animation/frame_03_delay-0.08s.gif")
+                self.image = pygame.transform.flip(self.image, True, False)
+        except Exception:
+            # Fallback: create a red overlay
+            self.image = pygame.Surface((60, 100))
+            self.image.fill((255, 0, 0))
+        
+        # Scale to player size
+        self.image = pygame.transform.scale(self.image, (60, 100))
+        self.rect = self.image.get_rect(center=player.rect.center)
+    
+    def update(self, dt):
+        """Update the damaged player sprite position and timer."""
+        # Keep centered on player
+        self.rect.center = self.player.rect.center
+        
+        # Advance timer
+        self.timer += dt
+        if self.timer >= self.duration:
+            self.kill()
+
 
 class Background(pygame.sprite.Sprite):
     """Represents the scrolling background in the game. The background moves left/right in response to player movement,
@@ -340,12 +441,18 @@ class Enemy(pygame.sprite.Sprite):
         if self.enemy_type == 0:
             self.frames = self.frames_root
             self.size = (60, 60)
+            self.health = 50
+            self.damage = 25
         elif self.enemy_type == 1:
             self.frames = self.frames_bat
             self.size = (30, 30)
+            self.health = 25
+            self.damage = 10
         elif self.enemy_type == 2:
             self.frames = self.frames_tree
             self.size = (80, 80)
+            self.health = 100
+            self.damage = 50
 
         # Hit points: set based on difficulty mode
         self.required_hits = 2 if hard_mode else 1
@@ -514,6 +621,10 @@ class Boss(pygame.sprite.Sprite):
         self.hits = 0
         self.hit_cooldown = 0  # ms cooldown between hits
 
+        # Health and damage system
+        self.health = 500
+        self.damage = 75
+
 
         # firing timers
         self.fire_timer = 0
@@ -573,6 +684,8 @@ class BigFireball(pygame.sprite.Sprite):
     def __init__(self, owner, speed=100):
         super().__init__()
         self.owner = owner
+        # Boss projectile damage
+        self.damage = 75
         self.frames = [
             pygame.image.load("src/Images/weapon/fireball/firebal_0.gif"),
             pygame.image.load("src/Images/weapon/fireball/firebal_1.gif"),
@@ -636,6 +749,8 @@ class SmallFireball(pygame.sprite.Sprite):
     def __init__(self, owner, speed=300):
         super().__init__()
         self.owner = owner
+        # Boss projectile damage
+        self.damage = 75
         size = 20
         self.frames = [
             pygame.image.load("src/Images/weapon/fireball/firebal_0.gif"),
@@ -731,6 +846,8 @@ class TracingFireball(pygame.sprite.Sprite):
         self.timer = 0
         self.count_time = 3000
         self.kind = 'trace'
+        # Boss projectile damage
+        self.damage = 75
         self.rect.topleft = (int(self._pos.x + self.owner.background.rect.x), int(self._pos.y + self.owner.background.rect.y))
 
     def update(self, dt):
@@ -813,8 +930,8 @@ class OtherBlade(pygame.sprite.Sprite):
 
         self.timer = 0
         self.count_time = 300
-        # damage for obsidian variant (strong)
-        self.damage = 80
+        # Flame sword damage (strong)
+        self.damage = 125
 
     def update(self, dt):
         """Advance lifetime; blade does not move after spawning."""
@@ -856,8 +973,9 @@ class Blade(pygame.sprite.Sprite):
 
         self.timer = 0
         self.count_time = 300
-        # normal blade damage (higher than bullet)
-        self.damage = 40
+        # Blade damage based on sword type from owner
+        # Will be set based on weapon type: basic=25, obsidian=50, flame=125
+        self.damage = 25  # default (basic sword)
 
     def update(self, dt):
         """Advance lifetime; blade does not move after spawning."""
@@ -933,8 +1051,8 @@ class Bullet(pygame.sprite.Sprite):
         self.timer = 0
         # Bullet lasts for 1 seconds
         self.count_time = 2000
-        # bullet damage
-        self.damage = 15
+        # Arrow damage
+        self.damage = 25
 
     def update(self, dt):
         """Move the bullet using dt (milliseconds) and expire after count_time."""
@@ -991,8 +1109,8 @@ class BossBullet(pygame.sprite.Sprite):
         self.vx = (speed) / 1000.0 * vx_sign
         self.timer = 0
         self.count_time = 5000
-        # boss projectile does high damage
-        self.damage = 80
+        # boss projectile damage
+        self.damage = 75
 
     def update(self, dt):
         self.world_x += self.vx * dt
@@ -1219,7 +1337,10 @@ class Spike(pygame.sprite.Sprite):
         self.rect.x = int(self.world_x + self.background.rect.x)
         self.rect.y = int(self.world_y + self.background.rect.y)
 
-
+    @property
+    def damage(self):
+        """Spike damage"""
+        return 25
 
 
 class Portal(pygame.sprite.Sprite):
@@ -1372,8 +1493,8 @@ class ObsidianBlade(pygame.sprite.Sprite):
 
         self.timer = 0
         self.count_time = 300
-        # obsidian blade damage (strong)
-        self.damage = 60
+        # Obsidian blade damage
+        self.damage = 50
 
     def update(self, dt):
         """Advance lifetime; blade does not move after spawning."""
