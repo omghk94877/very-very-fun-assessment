@@ -1,3 +1,8 @@
+"""
+name :
+date : 2026 january 15
+description : A simple JSON loader and dumper without using the built-in json module.
+"""
 def load_json(file_path):
     """
     Load data from a JSON file.
