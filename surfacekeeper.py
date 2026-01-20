@@ -648,7 +648,7 @@ class App:
         pygame.init()
         self.size = size
         self.screen = pygame.display.set_mode(size)
-        pygame.display.set_caption("Monster Smash")
+        pygame.display.set_caption("Monster Mash")
         self.clock = pygame.time.Clock()
         self.running = True
         self.current_screen = None

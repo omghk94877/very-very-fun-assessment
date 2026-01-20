@@ -122,7 +122,7 @@ class Main(surfacekeeper.ScreenManager):
                         obstacle = ObstacleClass(background, player=player)
                         attempts += 1
         
-        # Add rocks, bushes, and trees (decorations) - these render BEHIND the player
+        # Add rocks, bushes, and trees (decorations)
         spawn_non_overlapping_obstacle(sprite.Rock, 16, self.obstacles, self.background, self.player)
         spawn_non_overlapping_obstacle(sprite.Bush, 8, self.obstacles, self.background, self.player)
         spawn_non_overlapping_obstacle(sprite.Tree1, 6, self.obstacles, self.background, self.player)
@@ -350,6 +350,11 @@ class Main(surfacekeeper.ScreenManager):
                 # Top right
                 self.screen.blit(reload_surf, (self.size[0] - reload_surf.get_width() - 10, 10))
 
+            # Draw health on bottom left
+            health_text = f"Health: {self.player.health}"
+            health_surf = self.font.render(health_text, True, (0, 255, 0))
+            self.screen.blit(health_surf, (10, self.size[1] - 40))
+
             # Draw pause menu
             if self.paused:
                 # Semi-transparent overlay
@@ -374,15 +379,23 @@ class Main(surfacekeeper.ScreenManager):
             """
             #collision handling only (drawing done by caller)
             for i in self.obstacles:
-                # Only spikes kill the player; rocks are harmless
+                # Only spikes damage the player; rocks are harmless
                 if isinstance(i, sprite.Spike) and i.rect.colliderect(self.player.rect):
-                    #trigger death and freeze game
-                    self.player.death()
-                    if self.game_state:
-                        self.game_state.increment_death_count()
-                        self.game_state.save()
-                    self.game_over = True
-                    #self.keepGoing = False
+                    # Only take damage if cooldown has expired
+                    if self.player.damage_cooldown <= 0:
+                        # Player takes damage from spike
+                        damage = getattr(i, 'damage', 25)
+                        self.player.health -= damage
+                        self.player.damage_cooldown = self.player.damage_cooldown_duration
+                        # Show damaged animation based on player's facing direction
+                        self.player.show_damaged()
+                        # Check if player died
+                        if self.player.health <= 0:
+                            self.player.death()
+                            if self.game_state:
+                                self.game_state.increment_death_count()
+                                self.game_state.save()
+                            self.game_over = True
             
             #Check collisions between bullets and enemies: bullets kill enemies on contact
             for spr in list(self.all_sprites.sprites()):
@@ -434,17 +447,27 @@ class Main(surfacekeeper.ScreenManager):
                             self.next_action = ('visual_novel', 'boss_defeat')
                             self.keepGoing = False
      
-            # projectiles from boss kill player on contact
+            # projectiles from boss damage player on contact
             for spr in list(self.all_sprites.sprites()):
                 if isinstance(spr, (sprite.BigFireball, sprite.SmallFireball, sprite.TracingFireball, sprite.BossBullet)):
                     if spr.rect.colliderect(self.player.rect):
-                        # player dies immediately on projectile hit
-                        self.player.death()
-                        if self.game_state:
-                            self.game_state.increment_death_count()
-                            self.game_state.save()
-                        self.game_over = True
-                        return
+                        # Only take damage if cooldown has expired
+                        if self.player.damage_cooldown <= 0:
+                            # player takes damage from projectile
+                            damage = getattr(spr, 'damage', 75)
+                            self.player.health -= damage
+                            self.player.damage_cooldown = self.player.damage_cooldown_duration
+                            # Show damaged animation based on player's facing direction
+                            self.player.show_damaged()
+                            # Check if player died
+                            if self.player.health <= 0:
+                                self.player.death()
+                                if self.game_state:
+                                    self.game_state.increment_death_count()
+                                    self.game_state.save()
+                                self.game_over = True
+                                return
+                        spr.kill()  # remove projectile after hit
                     
             if getattr(self, 'portal', None) and self.player.rect.colliderect(self.portal.rect):
                 # Player touched the portal: save state and play portal story then go to main menu.
@@ -469,11 +492,21 @@ class Main(surfacekeeper.ScreenManager):
             #check for enemy and player
             for i in self.enemies:
                 if i.rect.colliderect(self.player.rect):
-                    self.player.death()
-                    if self.game_state:
-                        self.game_state.increment_death_count()
-                        self.game_state.save()
-                    self.game_over = True
+                    # Only take damage if cooldown has expired
+                    if self.player.damage_cooldown <= 0:
+                        # Player takes damage from enemy
+                        damage = getattr(i, 'damage', 10)
+                        self.player.health -= damage
+                        self.player.damage_cooldown = self.player.damage_cooldown_duration
+                        # Show damaged animation based on player's facing direction
+                        self.player.show_damaged()
+                        # Check if player died
+                        if self.player.health <= 0:
+                            self.player.death()
+                            if self.game_state:
+                                self.game_state.increment_death_count()
+                                self.game_state.save()
+                            self.game_over = True
             
             if getattr(self, 'portal', None) and self.player.rect.colliderect(self.portal.rect):
                 # Ensure touching portal always plays portal story then goes to main menu during gameplay.
