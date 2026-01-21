@@ -1,7 +1,10 @@
 """
-Date:
-Name:
-Description:
+Date: Jan 20th, 2026
+Name: Haoyang, Leo, Keagan
+Description: Main game loop and screen management for a 2D side-scrolling action game. 
+This module initializes the game screen, handles user input, updates game entities, checks for collisions, and manages game state transitions.
+It uses the pygame library for rendering and input handling, and relies on custom sprite and surfacekeeper modules for game entity management and screen handling.
+
 
 """
 import random
